@@ -3,7 +3,6 @@
 Portal resmi Dinas Komunikasi dan Informatika Kabupaten Pekalongan. UI/UX redesign dari [dinkominfo.pekalongankab.go.id](https://dinkominfo.pekalongankab.go.id/), dibangun dengan **React + TypeScript + Vite + Tailwind CSS** dan terhubung ke **Strapi CMS** read-only.
 
 - **Live Original:** https://dinkominfo.pekalongankab.go.id/
-- **CMS:** https://cms.dinkominfo.pekalongankab.go.id/ ([Docs v1.0.0](https://cms.dinkominfo.pekalongankab.go.id/documentation/v1.0.0))
 - **Logic Reference:** `/home/holmes/Documents/MAGANG/next-strapi-main/` (Next.js 16 App Router yang currently dipakai)
 
 ## Tech Stack
