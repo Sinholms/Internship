@@ -25,3 +25,9 @@ Thumbs.db
 .vscode/
 .idea/
 *.log
+
+# Next agent local docs - keep local only
+NEXT_AGENT_README.md
+CMS_STATUS*.md
+CMS_INTEGRATION_STATUS.md
+NEXT_AGENT*.md
