@@ -1,3 +1,27 @@
 .omo/
 DESIGN.md
 
+# Dependencies
+node_modules/
+
+# Build
+dist/
+build/
+
+# Env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+#plans & docs
+docs/
+.superpowers/
+
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
