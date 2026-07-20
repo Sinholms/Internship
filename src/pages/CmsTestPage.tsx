@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BASE_URL, CDN_URL } from '../lib/api/client';
-import { getStrapiImageUrl } from '../lib/api/image';
+import { getStrapiImageUrl } from '../lib/getStrapiImageUrl';
 import { useArticles, useCategories, useGlobal } from '../hooks/useCms';
 
 export default function CmsTestPage() {

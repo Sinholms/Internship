@@ -1,15 +1,12 @@
 import { useEffect, useState, useCallback } from 'react';
-import {
-  getArticles,
-  getArticleBySlug,
-  getArticleByDocumentId,
-  getLatestArticles,
-  getCategories,
-  getGlobal,
-  getHomePage,
-  getPageBySlug,
-  getMenuItems,
-} from '../lib/api/queries';
+import { getArticles } from '../lib/actions/getArticles';
+import { getArticleBySlug, getArticleByDocumentId } from '../lib/actions/getArticle';
+import { getLatestArticles } from '../lib/actions/getLatestArticles';
+import { getCategories } from '../lib/actions/getCategories';
+import { getGlobal } from '../lib/actions/getGlobal';
+import { getHomePage } from '../lib/actions/getHomePage';
+import { getPageBySlug } from '../lib/actions/getPage';
+import { getMenuItems } from '../lib/actions/getMenuItems';
 import type { ArticleCMS, CategoryCMS } from '../types/cms';
 
 function useAsync<T>(fn: () => Promise<T>, deps: unknown[] = []) {

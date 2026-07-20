@@ -52,9 +52,9 @@ Public role CMS saat ini **403 Forbidden** tanpa token — wajib Bearer. Token d
 
 ```
 .
-├── index.html              # Vite entry, anti-FOUC theme script, fonts
+├── index.html              # Vite entry, anti-FOUC theme script, fonts — akan hilang jika migrasi ke Next (diganti app/layout.tsx)
 ├── vite.config.ts
-├── tailwind.config.js      # 40+ colors, spacing, fontSize - persis dari tailwind-config.js lama
+├── tailwind.config.js      # 40+ colors, spacing, fontSize - persis dari tailwind-config.js lama — KEEP v3.4 untuk 100% verbatim UI (jangan v4)
 ├── postcss.config.js
 ├── public/
 │   └── assets/
@@ -63,37 +63,62 @@ Public role CMS saat ini **403 Forbidden** tanpa token — wajib Bearer. Token d
 └── src/
     ├── assets/             # logo + foto imported via Vite
     ├── components/
-    │   ├── Header.tsx      # sticky, active nav isActive() match list, theme toggle, mobile menu, scroll shadow-lg>20px
-    │   ├── Footer.tsx      # 12-col grid, social dari /api/global, newsletter, copyright
-    │   ├── Layout.tsx      # Header + main + Footer
-    │   └── ScrollToTop.tsx # scroll to top on route change
+    │   ├── Header.tsx      # sticky h-16 md:h-20, active nav isActive(), theme toggle, mobile menu, scroll shadow>20px — akan jadi Header/Header.tsx + Navbar.tsx di Next
+    │   ├── Footer.tsx      # 12-col grid, fetch /global?populate=*, social dari CMS, newsletter, copyright
+    │   ├── Layout.tsx      # Header + main + Footer — diganti (root)/layout.tsx di Next
+    │   └── ScrollToTop.tsx # scroll to top on route change — Next built-in, akan dihapus
     ├── context/
-    │   └── ThemeContext.tsx# light/dark, localStorage, prefers-color-scheme, html class, anti-FOUC - same as original js/components.js
+    │   └── ThemeContext.tsx# light/dark, localStorage, prefers, html class — anti-FOUC, same as original js/components.js — jadi providers.tsx di Next ("use client")
     ├── data/
     │   └── articles.ts     # legacy mock fallback
     ├── hooks/
-    │   └── useCms.ts       # useArticles, useArticleBySlug (+docId fallback), useLatestArticles, useCategories, useGlobal, useHomePage, useMenuItems
-    ├── lib/api/
-    │   ├── client.ts       # BASE_URL, CDN_URL, getHeaders Bearer - same as getArticles.ts
-    │   ├── image.ts        # getStrapiImageUrl - regex cms.[^.].pekalongankab.go.id → cdn, /uploads → CDN_URL - verbatim getStrapiImageUrl.ts
-    │   └── queries.ts      # getArticles (filters $or title/content/tags containsi, category slug, pub_date lte now, populate *, pagination 9), getArticleBySlug populate category/tags/author/featuredImage/relatedArticles/pdfViewer, getLatestArticles, getCategories, getGlobal, getHomePage, getMenuItems - populate copy dari next-strapi-main/actions
+    │   └── useCms.ts       # useArticles, useArticleBySlug (+docId fallback), useLatestArticles, useCategories, useGlobal, useHomePage, useMenuItems — import dari lib/actions/* — akan DELETED di Next final (diganti Server Components + /api proxy)
+    ├── lib/
+    │   ├── getCdnBaseUrl.ts      # CDN_BASE_URL = VITE_CDN_URL — mirip ref lib/getCdnBaseUrl.ts — public safe NEXT_PUBLIC_CDN_URL di Next
+    │   ├── getStrapiImageUrl.ts  # regex cms\.[^.]+\.pekalongankab.go.id -> cdn, /uploads -> CDN — verbatim ref, public safe
+    │   ├── formatDate.ts         # formatDateID id-ID short + formatDate long — dari ref lib/fomatDate.ts (fix typo)
+    │   ├── constants.ts          # ARTICLES_PAGE_SIZE 9, LATEST_LIMIT 3, GALERI 12
+    │   ├── actions/              # mirip ref lib/actions/ — 1 file 1 endpoint, no "use server" sekarang, akan jadi server-only + revalidate di Next
+    │   │   ├── getArticles.ts        # params {query, category, page, pageSize, sort, limit} -> qs filters $or containsi + pub_date lte now + populate * + pagination
+    │   │   ├── getArticle.ts         # getArticleBySlug + getArticleByDocumentId, populate category/tags/author/featuredImage/relatedArticles/pdfViewer
+    │   │   ├── getLatestArticles.ts  # sort pub_date desc, pagination[limit]
+    │   │   ├── getCategories.ts      # filters slug containsi
+    │   │   ├── getGlobal.ts          # populate siteIcon/siteIconDark/favicon/socialMedia/footerItems/defaultSeo — mirip getGlobalSettings ref
+    │   │   ├── getHomePage.ts        # heroSlider + sections.blocks on widgets.* 18 types + asides.item — mirip getHomePage ref verbatim
+    │   │   ├── getPage.ts            # filters slug eq, populate sections.blocks on widgets.* + asides + forms — mirip getPage ref
+    │   │   ├── getMenuItems.ts       # getMenuItems (Main Menu) + getTopbarMenu (Top Left/Right) — mirip getMenuItems + getTopbarMenu ref
+    │   │   └── getContactPage.ts     # populate featuredImage + contactList — mirip getContactPage ref
+    │   └── api/
+    │       ├── client.ts       # BASE_URL = STRAPI_BASE_URL/api, CDN_URL re-export, getHeaders Bearer, StrapiListResponse/Single + strapiFetch<T> — public BASE_URL baca VITE_* sekarang, NEXT_PUBLIC_* di Next, getHeaders akan pindah ke client.server.ts server-only
+    │       ├── client.server.ts# NEW di Next — server-only getHeaders reading STRAPI_API_KEY + STRAPI_BASE_URL with import "server-only" — token tidak di client bundle
+    │       ├── queries.ts      # SHIM re-export dari ../actions/* (backward compat) — akan dihapus di Next final
+    │       └── image.ts        # SHIM re-export getStrapiImageUrl dari ../getStrapiImageUrl + formatDateID dari ../formatDate — akan dihapus
     ├── types/
-    │   └── cms.ts          # ArticleCMS, CategoryCMS, StrapiMedia, MenuItemCMS, GlobalCMS, HomePageCMS, PageCMS
-    ├── pages/
+    │   └── cms.ts          # ArticleCMS, CategoryCMS, StrapiMedia, MenuItemCMS, GlobalCMS, HomePageCMS, PageCMS, SectionCMS — manual (ref ada strapi.d.ts generated)
+    ├── pages/              # Vite: 9 pages flat — di Next jadi src/app/(root)/* file-based (page.tsx, [id]/page.tsx) + client splits BeritaClient.tsx, KontakFormClient.tsx, CmsTestClient.tsx
     │   ├── HomePage.tsx          # hero 500/600px + quick links -mt-10 + BERITA REAL useLatestArticles(3) + city news + galeri bento + social glass
-    │   ├── ArticlesPage.tsx      # filter kategori dari useCategories() CMS 27 kategori + list REAL pagination ?page= + search ?query=&category= - UI persis
-    │   ├── ArticleDetailPage.tsx # slug or documentId detection isStrapiDocumentId(), fetch real, image real getStrapiImageUrl, content HTML prose, author/views/tags/share/related REAL - UI persis
-    │   ├── ContentPage.tsx       # CMS-only - 4 docs profil (Struktur Organisasi, Profil Kantor, Visi Misi, Data Pegawai) dari category=profil - UI persis 12-col TOC sticky
-    │   ├── LayananPage.tsx       # 6 cards + info layanan REAL query=layanan - UI persis
-    │   ├── GaleriPage.tsx        # bento masonry auto-rows 150/200, 12 articles REAL featuredImage - UI persis
-    │   ├── UnduhanPage.tsx       # static + check category download
-    │   ├── KontakPage.tsx        # info cards + form + contact-page REAL /api/contact-page - UI persis
-    │   └── CmsTestPage.tsx       # /cms-test - ENV + endpoint tests + curl examples
+    │   ├── ArticlesPage.tsx      # filter kategori useCategories() 27 kategori + list REAL pagination ?page= + search ?query=&category= — akan jadi berita/page.tsx server + BeritaClient.tsx "use client" fetch /api/articles proxy
+    │   ├── ArticleDetailPage.tsx # slug/docId detection isStrapiDocumentId() regex ^[a-z0-9]{20,30}$, dash>=3 && len>30 => slug, fetch real, prose HTML, share, related 3 — akan jadi berita/[id]/page.tsx server
+    │   ├── ContentPage.tsx       # CMS-only 4 docs profil category=profil
+    │   ├── LayananPage.tsx       # 6 cards static + info query=layanan
+    │   ├── GaleriPage.tsx        # bento auto-rows 150/200, 12 articles REAL featuredImage
+    │   ├── UnduhanPage.tsx       # static 6 + check CMS download
+    │   ├── KontakPage.tsx        # contact-page REAL /api/contact-page?populate=*, form demo alert — akan jadi kontak/page.tsx server + KontakFormClient.tsx "use client"
+    │   └── CmsTestPage.tsx       # /cms-test — ENV + 7 endpoint raw tests + curl guide — akan jadi cms-test/page.tsx server wrapper + CmsTestClient.tsx "use client" fetch /api/* proxy
+    ├── app/                # NEW di Next — App Router (tidak ada di Vite sekarang, ada di plan vite-to-next-migration.md)
+    │   ├── layout.tsx            # Root layout html lang="id" + anti-FOUC script + Inter + providers
+    │   ├── globals.css           # @tailwind base/components/utilities + custom.css verbatim
+    │   ├── providers.tsx         # "use client" ThemeProvider
+    │   ├── (root)/layout.tsx     # Header + main + Footer
+    │   ├── (root)/page.tsx       # Home server
+    │   ├── (root)/berita/page.tsx + BeritaClient.tsx + [id]/page.tsx
+    │   ├── (root)/kontak/page.tsx + KontakFormClient.tsx
+    │   └── api/ (proxy mandatory) — articles, articles/[id], categories, global, contact-page, menu-items, home-page, pages
     ├── styles/
-    │   └── custom.css      # hero-gradient, hover-card, line-clamp, html.dark overrides verbatim
-    ├── index.css           # @tailwind directives
-    ├── main.tsx
-    └── App.tsx             # BrowserRouter + legacy /pages/*.html redirects + /cms-test
+    │   └── custom.css      # hero-gradient linear to right rgba(0,42,88,0.9->0.3), hover-card translateY -4px, line-clamp, html.dark surfaces #1a1c1e/#1e2023 — akan merge ke app/globals.css di Next
+    ├── index.css           # @tailwind directives — akan jadi app/globals.css di Next
+    ├── main.tsx            # Vite entry createRoot — akan hilang di Next (diganti app/layout.tsx)
+    └── App.tsx             # BrowserRouter + Routes + legacy /pages/*.html redirects — akan hilang di Next (file-based routing + next.config redirects)
 ```
 
 ## Routes
@@ -126,13 +151,17 @@ fetch(`${STRAPI_BASE_URL}/api/articles?${qs}`, {
   next: { revalidate: 86400, tags: [`article-${slug}`] }
 })
 
-// React TSX ini - src/lib/api/queries.ts
-qs.stringify({
+// React TSX ini - src/lib/actions/getArticles.ts (mirip ref, adapt import.meta.env -> process.env di Next)
+// Sekarang: src/lib/actions/getArticles.ts — VITE_* , di Next jadi NEXT_PUBLIC_* + server-only client.server.ts untuk Bearer
+import { BASE_URL, getHeaders } from '../api/client' // Vite: getHeaders ada token, Next final: getHeadersServer dari client.server.ts server-only
+const q = qs.stringify({
   sort: "publication_date:desc",
   filters: { $or: [...], category: { slug: { $containsi } }, publication_date: { $lte: now } },
   populate: "*", pagination: { pageSize: 9 }
-})
+}, { encodeValuesOnly: true })
 fetch(`${BASE_URL}/articles?${q}`, { headers: getHeaders() })
+// Next final: fetch(..., { headers: getHeadersServer(), next: { revalidate: 3600, tags: ["articles"] } }) + import "server-only"
+// Client interaktif (BeritaClient, KontakFormClient, CmsTestClient) tidak import actions langsung, tapi fetch('/api/articles?...) proxy yang pakai server token internally
 ```
 
 - **Image:** `getStrapiImageUrl` — `/uploads/...` → `https://cdn.pekalongankab.go.id/uploads/...`, `https://cms.dinkominfo.../uploads/...` → `https://cdn.../...` (same `getStrapiImageUrl.ts`)
@@ -201,10 +230,12 @@ npm run build
 ## Gitignore
 
 ```
-.omo/ DESIGN.md node_modules/ dist/ build/ .env .env.local docs/ .superpowers/ .codex/ .claude/
+.omo/ DESIGN.md docs/superpowers/plans/ node_modules/ dist/ build/ .env .env.local NEXT_AGENT_README.md CMS_INTEGRATION_STATUS.md NEXT_AGENT*.md CMS_STATUS*.md .superpowers/ .codex/ .claude/
 ```
 
-`docs/superpowers/plans/` (AI plans) + `.env` (API key) git-ignored, `.env.example` tetap tracked sebagai template.
+`docs/superpowers/plans/` (plan lama static->React, done, git-ignored) + `NEXT_AGENT_README.md` (deprecated, replaced by `AGENTS.md`, git-ignored) + `.omo/docs/CMS_INTEGRATION_STATUS.md` (341 baris full doc) + `.omo/plans/vite-to-next-migration.md` (309 lines Next migration plan, Momus OKAY) + `.env` (API key) git-ignored, `.env.example` tetap tracked.
+
+Current branch `refactor/structure-mirror-ref` commit `7fd50e1` lib/actions mirror ref. Next migration plan di `.omo/plans/` belum dieksekusi, sudah Momus OKAY final, ENV contract: server-only `STRAPI_API_KEY` + `STRAPI_BASE_URL`, public `NEXT_PUBLIC_STRAPI_BASE_URL` + `NEXT_PUBLIC_CDN_URL`, proxy `/api/*` mandatory, Tailwind KEEP v3.4 pinned next@15.5.4, no `NEXT_PUBLIC_STRAPI_API_KEY`.
 
 ## Reference
 

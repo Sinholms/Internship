@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useArticles } from '../hooks/useCms';
-import { getStrapiImageUrl } from '../lib/api/image';
+import { getStrapiImageUrl } from '../lib/getStrapiImageUrl';
 
 export default function ContentPage() {
   const { articles: profilArticles, loading } = useArticles({ category: 'profil', pageSize: 10, sort: 'desc' });

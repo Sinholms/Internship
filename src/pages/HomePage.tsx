@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import heroFallback from '../assets/foto-kominfo.png';
 import { useLatestArticles } from '../hooks/useCms';
-import { getStrapiImageUrl, formatDateID } from '../lib/api/image';
+import { getStrapiImageUrl } from '../lib/getStrapiImageUrl';
+import { formatDateID } from '../lib/formatDate';
 
 export default function HomePage() {
   const { articles: latestNews, loading, error } = useLatestArticles(3);

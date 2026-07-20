@@ -1,12 +1,13 @@
 import qs from 'qs';
+import { CDN_BASE_URL } from '../getCdnBaseUrl';
 
 const STRAPI_BASE_URL = import.meta.env.VITE_STRAPI_BASE_URL || 'https://cms.dinkominfo.pekalongankab.go.id';
 const API_KEY = import.meta.env.VITE_STRAPI_API_KEY as string | undefined;
 
-export const CDN_URL = import.meta.env.VITE_CDN_URL || 'https://cdn.pekalongankab.go.id';
+export const CDN_URL = CDN_BASE_URL;
 export const BASE_URL = `${STRAPI_BASE_URL.replace(/\/$/, '')}/api`;
 
-function getHeaders(): HeadersInit {
+export function getHeaders(): HeadersInit {
   const headers: HeadersInit = {
     Accept: 'application/json',
   };
@@ -52,11 +53,3 @@ export async function strapiFetch<T>(endpoint: string, queryObject?: Record<stri
   return json as T;
 }
 
-// Convenience wrappers mimicking next-strapi-main pattern
-export async function getArticlesList(queryString: string) {
-  const qsPart = queryString ? `?${queryString}` : '';
-  const fullUrl = `${BASE_URL}/articles${qsPart}`;
-  const res = await fetch(fullUrl, { headers: getHeaders() });
-  if (!res.ok) throw new Error(`getArticles failed ${res.status}`);
-  return res.json();
-}

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useArticles } from '../hooks/useCms';
-import { getStrapiImageUrl } from '../lib/api/image';
+import { getStrapiImageUrl } from '../lib/getStrapiImageUrl';
 
 export default function GaleriPage() {
   const { articles, loading } = useArticles({ pageSize: 12, sort: 'desc' });
