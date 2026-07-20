@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getStrapiImageUrl } from '../lib/api/image';
+import { getStrapiImageUrl } from '../lib/getStrapiImageUrl';
 import { BASE_URL } from '../lib/api/client';
 
 interface ContactData {

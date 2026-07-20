@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { useArticleBySlug, useArticleByDocumentId, useLatestArticles } from '../hooks/useCms';
-import { getStrapiImageUrl, formatDateID } from '../lib/api/image';
+import { getStrapiImageUrl } from '../lib/getStrapiImageUrl';
+import { formatDateID } from '../lib/formatDate';
 
 function isStrapiDocumentId(id: string): boolean {
   // Strapi v5 documentId: 25 chars alphanumeric lowercase, e.g. "a3rkzd3y47hqddmhtso115np"

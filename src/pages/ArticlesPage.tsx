@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useArticles, useCategories } from '../hooks/useCms';
-import { getStrapiImageUrl, formatDateID } from '../lib/api/image';
+import { getStrapiImageUrl } from '../lib/getStrapiImageUrl';
+import { formatDateID } from '../lib/formatDate';
 
 export default function ArticlesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
