@@ -1,8 +1,16 @@
 import qs from 'qs';
 import { CDN_BASE_URL } from '../getCdnBaseUrl';
 
-const STRAPI_BASE_URL = import.meta.env.VITE_STRAPI_BASE_URL || 'https://cms.dinkominfo.pekalongankab.go.id';
-const API_KEY = import.meta.env.VITE_STRAPI_API_KEY as string | undefined;
+const STRAPI_BASE_URL =
+  (typeof process !== 'undefined' && (process.env.NEXT_PUBLIC_STRAPI_BASE_URL || process.env.STRAPI_BASE_URL)) ||
+  (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_STRAPI_BASE_URL) ||
+  'https://cms.dinkominfo.pekalongankab.go.id';
+
+// For Vite backward compat only - reads VITE token if present (Vite exposes via import.meta)
+// For Next, this will be empty (no token) - client must use /api/* proxy which injects server token
+const VITE_API_KEY =
+  (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_STRAPI_API_KEY) ||
+  undefined;
 
 export const CDN_URL = CDN_BASE_URL;
 export const BASE_URL = `${STRAPI_BASE_URL.replace(/\/$/, '')}/api`;
@@ -11,8 +19,8 @@ export function getHeaders(): HeadersInit {
   const headers: HeadersInit = {
     Accept: 'application/json',
   };
-  if (API_KEY) {
-    headers['Authorization'] = `Bearer ${API_KEY}`;
+  if (VITE_API_KEY) {
+    (headers as Record<string, string>)['Authorization'] = `Bearer ${VITE_API_KEY}`;
   }
   return headers;
 }
@@ -52,4 +60,3 @@ export async function strapiFetch<T>(endpoint: string, queryObject?: Record<stri
   const json = await res.json();
   return json as T;
 }
-
