@@ -11,15 +11,18 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function resolveInitialTheme(): Theme {
-  try {
-    const stored = localStorage.getItem('theme');
-    if (stored === 'dark' || stored === 'light') return stored;
+  if (typeof window === 'undefined' || typeof document === 'undefined') return 'light';
+try {
+const stored = localStorage.getItem('theme');
+if (stored === 'dark' || stored === 'light') return stored;
+} catch { /* ignore */ }
+try {
+if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
   } catch { /* ignore */ }
   try {
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
-  } catch { /* ignore */ }
   if (document.documentElement.classList.contains('dark')) return 'dark';
-  return 'light';
+  } catch { /* ignore */ }
+return 'light';
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

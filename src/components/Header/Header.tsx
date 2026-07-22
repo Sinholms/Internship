@@ -1,7 +1,9 @@
+"use client";
 import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { useTheme } from '../context/ThemeContext';
-import logoImg from '../assets/logo-kominfo.png';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useTheme } from '@/context/ThemeContext';
+import logoImg from '@/assets/logo-kominfo.png';
 
 interface NavItem {
   label: string;
@@ -37,7 +39,7 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { theme, toggleTheme } = useTheme();
-  const location = useLocation();
+  const pathname = usePathname() || '/';
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -47,7 +49,7 @@ export default function Header() {
 
   useEffect(() => {
     setMobileOpen(false);
-  }, [location.pathname]);
+  }, [pathname]);
 
   return (
     <header
@@ -56,7 +58,7 @@ export default function Header() {
     >
       <div className="flex justify-between items-center w-full px-4 md:px-margin-desktop max-w-container-max mx-auto h-full">
         <div className="flex items-center gap-3 md:gap-4">
-          <Link to="/" className="flex items-center gap-3 md:gap-4">
+          <Link href="/" className="flex items-center gap-3 md:gap-4">
             <img alt="Logo Dinkominfo" className="h-10 md:h-12 object-contain" src={typeof logoImg === 'string' ? logoImg : logoImg.src} />
             <div className="hidden lg:block">
               <h1 className="text-headline-md font-headline-md font-bold text-primary dark:text-primary-fixed leading-none">Dinkominfo</h1>
@@ -67,11 +69,11 @@ export default function Header() {
 
         <nav className="hidden md:flex items-center gap-6 lg:gap-8" aria-label="Navigasi utama">
           {NAV_ITEMS.map(item => {
-            const active = isActive(location.pathname, item.match);
+            const active = isActive(pathname, item.match);
             return (
               <Link
                 key={item.path}
-                to={item.path}
+                href={item.path}
                 className={`nav-link font-label-md text-label-md transition-colors duration-200 ${active ? ACTIVE_DESKTOP : INACTIVE_DESKTOP}`}
               >
                 {item.label}
@@ -97,11 +99,11 @@ export default function Header() {
       <nav id="mobile-menu" className={`${mobileOpen ? '' : 'hidden'} md:hidden bg-surface-white border-t border-border-light`} aria-label="Navigasi mobile">
         <div className="px-4 py-4 space-y-1">
           {NAV_ITEMS.map(item => {
-            const active = isActive(location.pathname, item.match);
+            const active = isActive(pathname, item.match);
             return (
               <Link
                 key={item.path}
-                to={item.path}
+                href={item.path}
                 className={`nav-mobile-link block px-4 py-3 rounded-lg font-label-md text-label-md ${active ? ACTIVE_MOBILE : INACTIVE_MOBILE}`}
               >
                 {item.label}

@@ -2,15 +2,15 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
 import ScrollToTop from './components/ScrollToTop';
-import HomePage from './pages/HomePage';
-import ArticlesPage from './pages/ArticlesPage';
-import ArticleDetailPage from './pages/ArticleDetailPage';
-import ContentPage from './pages/ContentPage';
-import LayananPage from './pages/LayananPage';
-import GaleriPage from './pages/GaleriPage';
-import UnduhanPage from './pages/UnduhanPage';
-import KontakPage from './pages/KontakPage';
-import CmsTestPage from './pages/CmsTestPage';
+import HomePage from './vite-pages/HomePage';
+import ArticlesPage from './vite-pages/ArticlesPage';
+import ArticleDetailPage from './vite-pages/ArticleDetailPage';
+import ContentPage from './vite-pages/ContentPage';
+import LayananPage from './vite-pages/LayananPage';
+import GaleriPage from './vite-pages/GaleriPage';
+import UnduhanPage from './vite-pages/UnduhanPage';
+import KontakPage from './vite-pages/KontakPage';
+import CmsTestPage from './vite-pages/CmsTestPage';
 
 function App() {
   return (
