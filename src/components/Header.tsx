@@ -57,7 +57,7 @@ export default function Header() {
       <div className="flex justify-between items-center w-full px-4 md:px-margin-desktop max-w-container-max mx-auto h-full">
         <div className="flex items-center gap-3 md:gap-4">
           <Link to="/" className="flex items-center gap-3 md:gap-4">
-            <img alt="Logo Dinkominfo" className="h-10 md:h-12 object-contain" src={logoImg} />
+            <img alt="Logo Dinkominfo" className="h-10 md:h-12 object-contain" src={typeof logoImg === 'string' ? logoImg : logoImg.src} />
             <div className="hidden lg:block">
               <h1 className="text-headline-md font-headline-md font-bold text-primary dark:text-primary-fixed leading-none">Dinkominfo</h1>
               <p className="text-label-sm font-label-sm text-on-surface-variant">Kabupaten Pekalongan</p>
