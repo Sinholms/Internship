@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
     }
     return NextResponse.json(json, { status: 200 });
   } catch (e) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    console.error('[articles-proxy] upstream request failed', e);
+    return NextResponse.json({ error: 'Gagal memuat artikel.' }, { status: 502 });
   }
 }

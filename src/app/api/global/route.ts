@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
     const json = await res.json();
     return NextResponse.json(json, { status: res.status });
   } catch (e) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    console.error('[global-proxy] upstream request failed', e);
+    return NextResponse.json({ error: 'Gagal memuat pengaturan situs.' }, { status: 502 });
   }
 }
