@@ -4,29 +4,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '@/context/ThemeContext';
 import logoImg from '@/assets/logo-kominfo.png';
-
-interface NavItem {
-  label: string;
-  path: string;
-  match: string[];
-}
-
-const NAV_ITEMS: NavItem[] = [
-  { label: 'Beranda', path: '/', match: ['/', '/index'] },
-  { label: 'Profil', path: '/profil', match: ['/profil', '/content-page', '/visi-misi', '/struktur-organisasi', '/profil'] },
-  { label: 'Berita', path: '/berita', match: ['/berita', '/articles', '/article-detail'] },
-  { label: 'Layanan', path: '/layanan', match: ['/layanan'] },
-  { label: 'Galeri', path: '/galeri', match: ['/galeri'] },
-  { label: 'Informasi', path: '/unduhan', match: ['/unduhan', '/informasi'] },
-  { label: 'Pengaduan', path: '/kontak', match: ['/kontak', '/pengaduan', '/contact-page'] },
-];
+import { adaptMenuItems, DEFAULT_HEADER_NAV_ITEMS, type HeaderNavItem } from '@/lib/adaptMenuItems';
 
 const ACTIVE_DESKTOP = 'text-primary dark:text-secondary-container border-b-2 border-primary dark:border-secondary-container pb-1';
 const INACTIVE_DESKTOP = 'text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed';
 const ACTIVE_MOBILE = 'text-primary bg-primary-fixed';
 const INACTIVE_MOBILE = 'text-on-surface-variant hover:bg-surface-subtle';
 
-function isActive(currentPath: string, matchList: string[]): boolean {
+function isActive(currentPath: string, matchList: readonly string[]): boolean {
   const lower = currentPath.toLowerCase();
   return matchList.some(m => {
     const ml = m.toLowerCase();
@@ -36,6 +21,7 @@ function isActive(currentPath: string, matchList: string[]): boolean {
 }
 
 export default function Header() {
+  const [navItems, setNavItems] = useState<readonly HeaderNavItem[]>(DEFAULT_HEADER_NAV_ITEMS);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -50,6 +36,27 @@ export default function Header() {
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetch('/api/menu-items', { signal: controller.signal })
+      .then(async response => {
+        if (!response.ok) throw new Error(`Menu request failed with status ${response.status}`);
+        return response.json();
+      })
+      .then(payload => setNavItems(adaptMenuItems(payload)))
+      .catch(error => {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+        if (error instanceof Error) {
+          console.warn(`[Header] ${error.message}; using static navigation`);
+          return;
+        }
+        console.warn('[Header] Menu request failed; using static navigation');
+      });
+
+    return () => controller.abort();
+  }, []);
 
   return (
     <header
@@ -68,7 +75,7 @@ export default function Header() {
         </div>
 
         <nav className="hidden md:flex items-center gap-6 lg:gap-8" aria-label="Navigasi utama">
-          {NAV_ITEMS.map(item => {
+          {navItems.map(item => {
             const active = isActive(pathname, item.match);
             return (
               <Link
@@ -98,7 +105,7 @@ export default function Header() {
 
       <nav id="mobile-menu" className={`${mobileOpen ? '' : 'hidden'} md:hidden bg-surface-white border-t border-border-light`} aria-label="Navigasi mobile">
         <div className="px-4 py-4 space-y-1">
-          {NAV_ITEMS.map(item => {
+          {navItems.map(item => {
             const active = isActive(pathname, item.match);
             return (
               <Link
