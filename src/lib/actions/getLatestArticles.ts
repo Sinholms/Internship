@@ -12,7 +12,7 @@ export async function getLatestArticles(params: {
     {
       sort: 'publication_date:desc',
       filters: category ? { category: { slug: category } } : undefined,
-      'pagination[limit]': limit,
+      pagination: { pageSize: limit, page: 1 },
       populate: '*',
     },
     { encodeValuesOnly: true }

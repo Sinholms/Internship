@@ -95,7 +95,7 @@ export default function ArticleDetailPage() {
   // Related via proxy - 3 latest
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/articles?pagination[pageSize]=3&pagination[limit]=3&populate=*&sort=publication_date:desc&status=published')
+    fetch('/api/articles?pagination[pageSize]=3&populate=*&sort=publication_date:desc&status=published')
       .then((r) => r.json())
       .then((j) => {
         if (!cancelled) setRelated(j.data || []);
