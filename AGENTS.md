@@ -5,7 +5,7 @@
 ## 0. Ringkasan
 
 - Portal Dinkominfo Kab. Pekalongan redesign. UI 100% persis static original, token `primary #002a58`, `secondary-container #fecb00`.
-- Stack: **Next.js 15.5.4** (App Router) + React 19.2.4 + TS + Tailwind 3.4.17 + Strapi CMS v5 (215 articles, 27 cats). Dual compat Vite masih ada via `src/vite-pages/` + `npm run dev:vite` / `build:vite`.
+- Stack: **Next.js 15.5.4** (App Router) + React 19.2.4 + TS + Tailwind 3.4.17 + Strapi CMS v5 (215 articles, 27 cats). Repository pure Next; Vite runtime has been retired.
 - Logic ref: `/home/holmes/Documents/MAGANG/next-strapi-main/` (Next.js 16 App Router). Struktur `src/lib/` dibikin mirip ref.
 - Original live: https://dinkominfo.pekalongankab.go.id/
 - Branch: `feat/next-migration` — Next final, proxy `/api/*` mandatory, token server-only `STRAPI_API_KEY`, public URL `NEXT_PUBLIC_STRAPI_BASE_URL` + `NEXT_PUBLIC_CDN_URL`, no `NEXT_PUBLIC_STRAPI_API_KEY`.
@@ -15,15 +15,12 @@
 ```bash
 npm install
 cp .env.example .env.local   # Next: isi STRAPI_API_KEY + NEXT_PUBLIC_* 
-# atau .env untuk Vite: VITE_STRAPI_API_KEY
 npm run dev                  # Next dev http://localhost:3000/
-npm run dev:vite             # Vite dev http://localhost:5173/
 npm run build                # Next build -> .next/
-npm run build:vite           # Vite build -> dist/ (tsc -p tsconfig.app.json --noEmit && vite build)
 npm run start                # Next start -p 3000
 ```
 
-ENV (.env.local git-ignored, .env git-ignored for Vite):
+ENV (.env.local git-ignored):
 ```
 # Next final - ENV contract (Momus OKAY)
 NEXT_PUBLIC_STRAPI_BASE_URL=https://cms.dinkominfo.pekalongankab.go.id
@@ -32,10 +29,6 @@ NEXT_PUBLIC_CDN=https://cdn.pekalongankab.go.id
 STRAPI_BASE_URL=https://cms.dinkominfo.pekalongankab.go.id (server copy, same as public)
 STRAPI_API_KEY=f2f... (Bearer, server-only, never NEXT_PUBLIC)
 
-# Vite backward compat (still works via src/vite-pages/)
-VITE_STRAPI_BASE_URL=https://cms.dinkominfo.pekalongankab.go.id
-VITE_CDN_URL=https://cdn.pekalongankab.go.id
-VITE_STRAPI_API_KEY=f2f...
 ```
 
 ## 2. Struktur Folder (Next final)
@@ -76,11 +69,11 @@ src/
 │   ├── Header/Header.tsx             # "use client" sticky h-16 md:h-20, NAV_ITEMS 7 hardcode, active isActive(), usePathname(), theme toggle, scroll shadow >20px, mobile menu 44px tap
 │   └── Footer/FooterNext.tsx         # "use client" fetch /api/global proxy, 12-col grid, social CMS, newsletter, copyright
 ├── lib/
-│   ├── getCdnBaseUrl.ts              # dual compat: NEXT_PUBLIC_CDN_URL || VITE_CDN_URL fallback
+│   ├── getCdnBaseUrl.ts              # NEXT_PUBLIC_CDN_URL || NEXT_PUBLIC_CDN fallback
 │   ├── getStrapiImageUrl.ts          # regex cms\.[^.]+\.pekalongankab.go.id -> cdn, /uploads -> CDN - verbatim ref, public safe
 │   ├── formatDate.ts                 # formatDateID id-ID short + formatDate long
 │   ├── constants.ts                  # ARTICLES_PAGE_SIZE 9, LATEST_LIMIT 3, GALERI 12
-│   ├── actions/                      # mirror ref lib/actions/ - 1 file 1 endpoint, dual compat client.ts (Vite token optional, Next no token for proxy server uses client.server.ts)
+│   ├── actions/                      # mirror ref lib/actions/ - 1 file 1 endpoint, query/transformation logic
 │   │   ├── getArticles.ts            # qs filters $or containsi + pub_date lte now + populate * + pagination
 │   │   ├── getArticle.ts             # BySlug + ByDocId populate
 │   │   ├── getLatestArticles.ts      # sort pub_date desc limit
@@ -91,25 +84,20 @@ src/
 │   │   ├── getMenuItems.ts           # Main Menu + Topbar
 │   │   └── getContactPage.ts         # populate featuredImage + contactList
 │   └── api/
-│       ├── client.ts                 # Public safe: BASE_URL = NEXT_PUBLIC_STRAPI_BASE_URL/api OR VITE_ fallback, CDN_URL, getHeaders() only VITE_API_KEY for backward compat (Next client empty -> uses proxy), strapiFetch
+│       ├── client.ts                 # Public URL/query helper; client UI uses same-origin proxy
 │       ├── client.server.ts          # Server-only: import "server-only", BASE_URL_SERVER = STRAPI_BASE_URL/api, getHeadersServer() Bearer STRAPI_API_KEY (never NEXT_PUBLIC token), warn if missing
-│       ├── queries.ts                # SHIM re-export dari ../actions/*
-│       └── image.ts                  # SHIM re-export
 ├── hooks/
-│   └── useCms.ts                     # useAsync + useArticles etc - used only by Vite (src/vite-pages/), NOT used by src/app (app uses proxy fetch)
+│   └── types/cms.ts                  # manual CMS types
 ├── types/
 │   └── cms.ts                        # manual types
-├── vite-pages/                       # Vite legacy - 9 pages flat (HomePage, ArticlesPage, etc) still use useCms + import.meta.env VITE_ - kept for dev:vite/build:vite
 ├── context/ThemeContext.tsx          # light/dark localStorage + prefers + html class, SSR guard (typeof window/document)
 ├── data/articles.ts                  # legacy mock fallback
-├── styles/custom.css                 # legacy for Vite (now merged to app/globals.css) - keep for vite build
 ├── index.css                         # @tailwind directives for Vite
-├── main.tsx                          # Vite entry
-└── App.tsx                           # Vite BrowserRouter - now imports from vite-pages/
+└── types/cms.ts                      # manual CMS types
 ```
 
 Mapping ke ref:
-- `next-strapi-main/src/lib/actions/getArticles.ts` -> `src/lib/actions/getArticles.ts` (dual compat)
+- `next-strapi-main/src/lib/actions/getArticles.ts` -> `src/lib/actions/getArticles.ts`
 - `getStrapiImageUrl.ts` verbatim, `getCdnBaseUrl.ts` dual, `fomatDate.ts` fix typo
 - `getGlobalSettings.ts` -> `getGlobal.ts`, etc.
 - `src/lib/api/client.server.ts` NEW server-only `STRAPI_API_KEY` + `STRAPI_BASE_URL` with `import "server-only"` - token tidak di client bundle
@@ -123,10 +111,10 @@ const BASE_URL = `${process.env.STRAPI_BASE_URL || process.env.NEXT_PUBLIC_STRAP
 export function getHeadersServer() { return { Authorization: `Bearer ${process.env.STRAPI_API_KEY}` } }
 
 // client.ts (public safe, no token)
-export const BASE_URL = `${NEXT_PUBLIC_STRAPI_BASE_URL || VITE_ fallback}/api`
-export function getHeaders() { only VITE_API_KEY if Vite mode, else empty }
+export const BASE_URL = `${NEXT_PUBLIC_STRAPI_BASE_URL}/api`
+export function getHeaders() { return public headers only; client UI uses proxy }
 
-// actions/*.ts (dual compat, now not server-only yet, uses client.ts public)
+// actions/*.ts provide reusable query/transformation logic
 // In Next app, prefer proxy /api/* rather than direct actions
 
 // app/api/articles/route.ts proxy mandatory
@@ -143,7 +131,7 @@ const contact = await fetch(`${BASE_URL_SERVER}/contact-page?populate=*`, { head
 
 - `qs.stringify` selalu `encodeValuesOnly:true`
 - Image: `getStrapiImageUrl`
-- Pages app/(root) use proxy `/api/*` (no token in client bundle). Legacy vite-pages use direct `import.meta.env.VITE_STRAPI_API_KEY` still.
+- Pages app/(root) use proxy `/api/*` (no token in client bundle).
 
 ## 4. Import Rule Baru (Next final)
 
@@ -155,9 +143,7 @@ import { BASE_URL_SERVER, getHeadersServer } from '@/lib/api/client.server' // s
 // client components fetch via proxy
 fetch('/api/articles?pagination[pageSize]=1')
 
-// Vite legacy still
-import { getStrapiImageUrl } from '../lib/getStrapiImageUrl'
-import { useArticles } from '../hooks/useCms'
+// Client components fetch same-origin /api/* routes.
 ```
 
 ## 5. UI Rules (JANGAN DILANGGAR)
@@ -191,13 +177,13 @@ Do:
 - Logic baru taruh di `lib/actions/` per-file, mirip ref.
 - Import image/date dari `lib/getStrapiImageUrl`, `lib/formatDate`.
 - Next app pages use `/api/*` proxy for client interactivity, server wrappers use `client.server.ts` directly.
-- Build must pass both `npm run build` (Next 18 routes) and `npm run build:vite` (dist 373kB).
-- ENV via `process.env.NEXT_PUBLIC_*` public, `process.env.STRAPI_API_KEY` server-only, never `NEXT_PUBLIC_STRAPI_API_KEY`. Vite still VITE_* via import.meta.env.
+- Build must pass `npm run build` (Next routes).
+- ENV via `process.env.NEXT_PUBLIC_*` public, `process.env.STRAPI_API_KEY` server-only, never `NEXT_PUBLIC_STRAPI_API_KEY`.
 
 Don't:
 - Don't ubah className/tokens/custom.css - UI locked.
 - Don't add `NEXT_PUBLIC_STRAPI_API_KEY` ever. Client `client.ts` must NOT contain token. Check `grep -r NEXT_PUBLIC_STRAPI_API_KEY src/` = 0, `grep -r Bearer .next/static` should be only docs not token.
-- Don't use `useCms` hooks inside `src/app` (they use direct fetch without proxy, would 403). Use proxy fetch.
+- Client components inside `src/app` fetch same-origin `/api/*` routes; server wrappers use `client.server.ts`.
 - Don't `as any` / `@ts-ignore`.
 
 ## 9. Git Rules
@@ -230,7 +216,7 @@ Don't:
 - [x] Dark mode localStorage html.dark no FOUC inline script
 - [x] Mobile 44px tap grid 2->4 h-16
 - [x] `npm run build` 18 routes (8 api + 8 app + _not-found + /)
-- [x] `npm run build:vite` dist 373kB gzip 106kB
+- [x] Vite compatibility retired after explicit Decision B
 - [x] No NEXT_PUBLIC_STRAPI_API_KEY in src/ (grep 0)
 - [x] No VITE_ in src/app (grep 0)
 - [x] No useCms in src/app (grep 0)
@@ -238,4 +224,4 @@ Don't:
 - [x] Legacy /pages/articles.html 308 redirect via next.config.mjs
 - [x] next pinned 15.5.4 tailwind 3.4.17
 
-Current branch `feat/next-migration` local only, not committed/pushed per user request. Next step: user decides when to commit/push.
+Current branch `feat/next-migration` local only, not committed/pushed per user request. Pure-Next cleanup is complete locally; user decides when to commit/push.
