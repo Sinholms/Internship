@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getStrapiImageUrl } from '@/lib/getStrapiImageUrl';
@@ -26,6 +26,7 @@ export default function BeritaClient({ initialData }: Props) {
   const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<CategoryCMS[]>([]);
+  const [searchInput, setSearchInput] = useState(query || '');
 
   // Fetch categories via proxy (no token)
   useEffect(() => {
@@ -87,6 +88,16 @@ export default function BeritaClient({ initialData }: Props) {
 
   const filterCategories = ['Semua', ...(categories?.map(c => c.name) || ['Teknologi', 'Layanan', 'Informasi'])];
 
+  const handleSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const newParams = new URLSearchParams(searchParams?.toString() || '');
+    const nextQuery = searchInput.trim();
+    if (nextQuery) newParams.set('query', nextQuery);
+    else newParams.delete('query');
+    newParams.set('page', '1');
+    router.push(`/berita?${newParams.toString()}`);
+  };
+
   const handleCategory = (cat: string) => {
     setActiveCat(cat);
     const newParams = new URLSearchParams(searchParams?.toString() || '');
@@ -123,20 +134,34 @@ export default function BeritaClient({ initialData }: Props) {
             <h2 className="font-headline-lg text-headline-lg text-primary">Berita Terkini</h2>
             <p className="text-body-md font-body-md text-on-surface-variant mt-2">Pilih kategori untuk menemukan informasi yang Anda butuhkan. {total ? `(${total} artikel)` : ''} {error ? '(Error)' : ''}</p>
           </div>
-          <div className="flex flex-wrap gap-2" aria-label="Filter kategori berita">
-            {filterCategories.slice(0, 6).map((cat) => (
-              <button
-                key={cat}
-                onClick={() => handleCategory(cat)}
-                className={activeCat === cat
-                  ? "px-4 py-2 rounded-full bg-primary text-on-primary text-label-md font-label-md"
-                  : "px-4 py-2 rounded-full bg-surface-white border border-border-light text-on-surface-variant text-label-md font-label-md hover:border-primary hover:text-primary transition-colors"}
-                type="button"
-                aria-pressed={activeCat === cat}
-              >
-                {cat}
-              </button>
-            ))}
+          <div className="flex flex-col items-stretch md:items-end gap-3">
+            <form onSubmit={handleSearch} className="flex gap-2" role="search">
+              <label htmlFor="berita-search" className="sr-only">Cari berita</label>
+              <input
+                id="berita-search"
+                type="search"
+                value={searchInput}
+                onChange={event => setSearchInput(event.target.value)}
+                placeholder="Cari berita..."
+                className="w-full md:w-64 px-4 py-2 rounded-lg border border-border-light bg-surface-white text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <button type="submit" className="px-4 py-2 rounded-lg bg-primary text-on-primary text-label-md font-label-md hover:bg-primary-container focus:outline-none focus:ring-2 focus:ring-primary transition-colors">Cari</button>
+            </form>
+            <div className="flex flex-wrap gap-2" aria-label="Filter kategori berita">
+              {filterCategories.slice(0, 6).map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => handleCategory(cat)}
+                  className={activeCat === cat
+                    ? "px-4 py-2 rounded-full bg-primary text-on-primary text-label-md font-label-md"
+                    : "px-4 py-2 rounded-full bg-surface-white border border-border-light text-on-surface-variant text-label-md font-label-md hover:border-primary hover:text-primary transition-colors"}
+                  type="button"
+                  aria-pressed={activeCat === cat}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
