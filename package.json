@@ -7,20 +7,27 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start -p 3000",
-    "lint": "oxlint"
+    "lint": "oxlint",
+    "test:article-html": "tsc --project tsconfig.article-html-test.json && node --test .article-html-test/sanitizeArticleHtml.test.js",
+    "test:article-pdf": "tsc --project tsconfig.article-pdf-test.json && node --test .article-pdf-test/lib/articlePdfCore.test.js",
+    "test:reserved-cms-routes": "tsc --project tsconfig.reserved-cms-routes-test.json && node --test .reserved-cms-routes-test/reservedCmsRoutes.test.js"
   },
   "dependencies": {
+    "dompurify": "^3.4.12",
     "qs": "^6.15.3"
   },
   "devDependencies": {
     "@tailwindcss/container-queries": "^0.1.1",
     "@tailwindcss/forms": "^0.5.11",
+    "@types/dompurify": "^3.0.5",
+    "@types/jsdom": "^28.0.3",
     "@types/node": "^24.13.2",
     "@types/qs": "^6.15.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.5.4",
     "eslint-config-next": "15.5.4",
+    "jsdom": "^29.1.1",
     "next": "15.5.4",
     "oxlint": "^1.71.0",
     "postcss": "^8.5.19",
