@@ -1,13 +1,13 @@
 # Dinkominfo Kabupaten Pekalongan — Portal Informasi Resmi
 
-Portal resmi Dinas Komunikasi dan Informatika Kabupaten Pekalongan. UI/UX redesign dari [dinkominfo.pekalongankab.go.id](https://dinkominfo.pekalongankab.go.id/), dibangun dengan **React + TypeScript + Vite + Tailwind CSS** dan terhubung ke **Strapi CMS** read-only.
+Portal resmi Dinas Komunikasi dan Informatika Kabupaten Pekalongan. UI/UX redesign dari [dinkominfo.pekalongankab.go.id](https://dinkominfo.pekalongankab.go.id/), dibangun dengan **Next.js + React + TypeScript + Tailwind CSS** dan terhubung ke **Strapi CMS** read-only.
 
 - **Live Original:** https://dinkominfo.pekalongankab.go.id/
 - **Logic Reference:** `/home/holmes/Documents/MAGANG/next-strapi-main/` (Next.js 16 App Router yang currently dipakai)
 
 ## Tech Stack
 
-- **Vite 6** + **React 19** + **TypeScript 6** + **React Router DOM 7**
+- **Next.js 15.5.4** + **React 19** + **TypeScript 6**
 - **Tailwind CSS 3.4** + `@tailwindcss/forms` + `@tailwindcss/container-queries`
 - **Strapi CMS v5** — 215 articles, 27 categories, pages, menus, global settings
 - Fonts: Inter + Material Symbols Outlined (Google Fonts)
@@ -26,34 +26,34 @@ Portal resmi Dinas Komunikasi dan Informatika Kabupaten Pekalongan. UI/UX redesi
 npm install
 
 # Env (wajib untuk CMS)
-cp .env.example .env
-# isi VITE_STRAPI_API_KEY dengan token read-only dari Strapi Admin > Settings > API Tokens
+cp .env.example .env.local
+# isi STRAPI_API_KEY dengan token read-only dari Strapi Admin > Settings > API Tokens
 
 # Dev
 npm run dev
-# http://localhost:5173/
+# http://localhost:3000/
 
 # Build
 npm run build
-npm run preview
+npm run start
 ```
 
 ### ENV
 
 ```
-VITE_STRAPI_BASE_URL=https://cms.dinkominfo.pekalongankab.go.id
-VITE_CDN_URL=https://cdn.pekalongankab.go.id
-VITE_STRAPI_API_KEY=f2fdbf50... (token panjang, read-only)
+NEXT_PUBLIC_STRAPI_BASE_URL=https://cms.dinkominfo.pekalongankab.go.id
+NEXT_PUBLIC_CDN_URL=https://cdn.pekalongankab.go.id
+STRAPI_BASE_URL=https://cms.dinkominfo.pekalongankab.go.id
+STRAPI_API_KEY=f2fdbf50... (server-only, token read-only)
 ```
 
-Public role CMS saat ini **403 Forbidden** tanpa token — wajib Bearer. Token disimpan di `.env` (git-ignored).
+Public role CMS saat ini **403 Forbidden** tanpa token — wajib Bearer. Token disimpan di `.env.local` (git-ignored) dan hanya dipakai server.
 
 ## Struktur
 
 ```
 .
-├── index.html              # Vite entry, anti-FOUC theme script, fonts — akan hilang jika migrasi ke Next (diganti app/layout.tsx)
-├── vite.config.ts
+├── next.config.mjs
 ├── tailwind.config.js      # 40+ colors, spacing, fontSize - persis dari tailwind-config.js lama — KEEP v3.4 untuk 100% verbatim UI (jangan v4)
 ├── postcss.config.js
 ├── public/
@@ -61,24 +61,20 @@ Public role CMS saat ini **403 Forbidden** tanpa token — wajib Bearer. Token d
 │       ├── logo-kominfo.png
 │       └── foto-kominfo.png
 └── src/
-    ├── assets/             # logo + foto imported via Vite
+    ├── assets/             # logo + foto
     ├── components/
-    │   ├── Header.tsx      # sticky h-16 md:h-20, active nav isActive(), theme toggle, mobile menu, scroll shadow>20px — akan jadi Header/Header.tsx + Navbar.tsx di Next
-    │   ├── Footer.tsx      # 12-col grid, fetch /global?populate=*, social dari CMS, newsletter, copyright
-    │   ├── Layout.tsx      # Header + main + Footer — diganti (root)/layout.tsx di Next
-    │   └── ScrollToTop.tsx # scroll to top on route change — Next built-in, akan dihapus
+    │   ├── Header/Header.tsx # sticky h-16 md:h-20, active nav, theme toggle, mobile menu
+    │   └── Footer/FooterNext.tsx # CMS social/copyright and newsletter
     ├── context/
     │   └── ThemeContext.tsx# light/dark, localStorage, prefers, html class — anti-FOUC, same as original js/components.js — jadi providers.tsx di Next ("use client")
     ├── data/
     │   └── articles.ts     # legacy mock fallback
-    ├── hooks/
-    │   └── useCms.ts       # useArticles, useArticleBySlug (+docId fallback), useLatestArticles, useCategories, useGlobal, useHomePage, useMenuItems — import dari lib/actions/* — akan DELETED di Next final (diganti Server Components + /api proxy)
     ├── lib/
-    │   ├── getCdnBaseUrl.ts      # CDN_BASE_URL = VITE_CDN_URL — mirip ref lib/getCdnBaseUrl.ts — public safe NEXT_PUBLIC_CDN_URL di Next
+    │   ├── getCdnBaseUrl.ts      # public NEXT_PUBLIC_CDN_URL helper
     │   ├── getStrapiImageUrl.ts  # regex cms\.[^.]+\.pekalongankab.go.id -> cdn, /uploads -> CDN — verbatim ref, public safe
     │   ├── formatDate.ts         # formatDateID id-ID short + formatDate long — dari ref lib/fomatDate.ts (fix typo)
     │   ├── constants.ts          # ARTICLES_PAGE_SIZE 9, LATEST_LIMIT 3, GALERI 12
-    │   ├── actions/              # mirip ref lib/actions/ — 1 file 1 endpoint, no "use server" sekarang, akan jadi server-only + revalidate di Next
+    │   ├── actions/              # CMS query/transformation logic, one endpoint per file
     │   │   ├── getArticles.ts        # params {query, category, page, pageSize, sort, limit} -> qs filters $or containsi + pub_date lte now + populate * + pagination
     │   │   ├── getArticle.ts         # getArticleBySlug + getArticleByDocumentId, populate category/tags/author/featuredImage/relatedArticles/pdfViewer
     │   │   ├── getLatestArticles.ts  # sort pub_date desc, pagination[limit]
@@ -89,13 +85,12 @@ Public role CMS saat ini **403 Forbidden** tanpa token — wajib Bearer. Token d
     │   │   ├── getMenuItems.ts       # getMenuItems (Main Menu) + getTopbarMenu (Top Left/Right) — mirip getMenuItems + getTopbarMenu ref
     │   │   └── getContactPage.ts     # populate featuredImage + contactList — mirip getContactPage ref
     │   └── api/
-    │       ├── client.ts       # BASE_URL = STRAPI_BASE_URL/api, CDN_URL re-export, getHeaders Bearer, StrapiListResponse/Single + strapiFetch<T> — public BASE_URL baca VITE_* sekarang, NEXT_PUBLIC_* di Next, getHeaders akan pindah ke client.server.ts server-only
+    │       ├── client.ts       # public URL/query types; browser code uses same-origin proxy
     │       ├── client.server.ts# NEW di Next — server-only getHeaders reading STRAPI_API_KEY + STRAPI_BASE_URL with import "server-only" — token tidak di client bundle
-    │       ├── queries.ts      # SHIM re-export dari ../actions/* (backward compat) — akan dihapus di Next final
-    │       └── image.ts        # SHIM re-export getStrapiImageUrl dari ../getStrapiImageUrl + formatDateID dari ../formatDate — akan dihapus
+    │       └── client.server.ts # server-only STRAPI_API_KEY and Bearer headers
     ├── types/
     │   └── cms.ts          # ArticleCMS, CategoryCMS, StrapiMedia, MenuItemCMS, GlobalCMS, HomePageCMS, PageCMS, SectionCMS — manual (ref ada strapi.d.ts generated)
-    ├── pages/              # Vite: 9 pages flat — di Next jadi src/app/(root)/* file-based (page.tsx, [id]/page.tsx) + client splits BeritaClient.tsx, KontakFormClient.tsx, CmsTestClient.tsx
+    ├── pages/              # Next App Router pages live under src/app/(root)
     │   ├── HomePage.tsx          # hero 500/600px + quick links -mt-10 + BERITA REAL useLatestArticles(3) + city news + galeri bento + social glass
     │   ├── ArticlesPage.tsx      # filter kategori useCategories() 27 kategori + list REAL pagination ?page= + search ?query=&category= — akan jadi berita/page.tsx server + BeritaClient.tsx "use client" fetch /api/articles proxy
     │   ├── ArticleDetailPage.tsx # slug/docId detection isStrapiDocumentId() regex ^[a-z0-9]{20,30}$, dash>=3 && len>30 => slug, fetch real, prose HTML, share, related 3 — akan jadi berita/[id]/page.tsx server
@@ -105,20 +100,16 @@ Public role CMS saat ini **403 Forbidden** tanpa token — wajib Bearer. Token d
     │   ├── UnduhanPage.tsx       # static 6 + check CMS download
     │   ├── KontakPage.tsx        # contact-page REAL /api/contact-page?populate=*, form demo alert — akan jadi kontak/page.tsx server + KontakFormClient.tsx "use client"
     │   └── CmsTestPage.tsx       # /cms-test — ENV + 7 endpoint raw tests + curl guide — akan jadi cms-test/page.tsx server wrapper + CmsTestClient.tsx "use client" fetch /api/* proxy
-    ├── app/                # NEW di Next — App Router (tidak ada di Vite sekarang, ada di plan vite-to-next-migration.md)
+    ├── app/                # Next App Router aktif; primary runtime `npm run dev`
     │   ├── layout.tsx            # Root layout html lang="id" + anti-FOUC script + Inter + providers
     │   ├── globals.css           # @tailwind base/components/utilities + custom.css verbatim
     │   ├── providers.tsx         # "use client" ThemeProvider
     │   ├── (root)/layout.tsx     # Header + main + Footer
-    │   ├── (root)/page.tsx       # Home server
+    │   ├── (root)/page.tsx       # Home UI current; CMS read via /api proxy
     │   ├── (root)/berita/page.tsx + BeritaClient.tsx + [id]/page.tsx
     │   ├── (root)/kontak/page.tsx + KontakFormClient.tsx
     │   └── api/ (proxy mandatory) — articles, articles/[id], categories, global, contact-page, menu-items, home-page, pages
-    ├── styles/
-    │   └── custom.css      # hero-gradient linear to right rgba(0,42,88,0.9->0.3), hover-card translateY -4px, line-clamp, html.dark surfaces #1a1c1e/#1e2023 — akan merge ke app/globals.css di Next
-    ├── index.css           # @tailwind directives — akan jadi app/globals.css di Next
-    ├── main.tsx            # Vite entry createRoot — akan hilang di Next (diganti app/layout.tsx)
-    └── App.tsx             # BrowserRouter + Routes + legacy /pages/*.html redirects — akan hilang di Next (file-based routing + next.config redirects)
+    └── app/                # Next App Router pages and /api/* CMS proxy
 ```
 
 ## Routes
@@ -151,8 +142,7 @@ fetch(`${STRAPI_BASE_URL}/api/articles?${qs}`, {
   next: { revalidate: 86400, tags: [`article-${slug}`] }
 })
 
-// React TSX ini - src/lib/actions/getArticles.ts (mirip ref, adapt import.meta.env -> process.env di Next)
-// Sekarang: src/lib/actions/getArticles.ts — VITE_* , di Next jadi NEXT_PUBLIC_* + server-only client.server.ts untuk Bearer
+// src/lib/actions/getArticles.ts tetap menjadi query/transformation owner.
 import { BASE_URL, getHeaders } from '../api/client' // Vite: getHeaders ada token, Next final: getHeadersServer dari client.server.ts server-only
 const q = qs.stringify({
   sort: "publication_date:desc",
@@ -160,7 +150,7 @@ const q = qs.stringify({
   populate: "*", pagination: { pageSize: 9 }
 }, { encodeValuesOnly: true })
 fetch(`${BASE_URL}/articles?${q}`, { headers: getHeaders() })
-// Next final: fetch(..., { headers: getHeadersServer(), next: { revalidate: 3600, tags: ["articles"] } }) + import "server-only"
+// Proxy route memakai getHeadersServer() untuk Bearer server-only.
 // Client interaktif (BeritaClient, KontakFormClient, CmsTestClient) tidak import actions langsung, tapi fetch('/api/articles?...) proxy yang pakai server token internally
 ```
 
@@ -175,7 +165,7 @@ fetch(`${BASE_URL}/articles?${q}`, { headers: getHeaders() })
 
 ```bash
 npm run dev
-# buka http://localhost:5173/cms-test
+# buka http://localhost:3000/cms-test
 ```
 
 Di halaman ini:
@@ -230,12 +220,12 @@ npm run build
 ## Gitignore
 
 ```
-.omo/ DESIGN.md docs/superpowers/plans/ node_modules/ dist/ build/ .env .env.local NEXT_AGENT_README.md CMS_INTEGRATION_STATUS.md NEXT_AGENT*.md CMS_STATUS*.md .superpowers/ .codex/ .claude/
+.omo/ DESIGN.md docs/superpowers/plans/ node_modules/ dist/ build/ .env .env.local NEXT_AGENT_README.md NEXT_AGENT*.md CMS_STATUS*.md .superpowers/ .codex/ .claude/
 ```
 
-`docs/superpowers/plans/` (plan lama static->React, done, git-ignored) + `NEXT_AGENT_README.md` (deprecated, replaced by `AGENTS.md`, git-ignored) + `.omo/docs/CMS_INTEGRATION_STATUS.md` (341 baris full doc) + `.omo/plans/vite-to-next-migration.md` (309 lines Next migration plan, Momus OKAY) + `.env` (API key) git-ignored, `.env.example` tetap tracked.
+`docs/superpowers/plans/` berisi plan lama static->React yang git-ignored. `NEXT_AGENT_README.md` deprecated dan digantikan `AGENTS.md`. `.omo/plans/pure-next-finalization.md` memegang keputusan dan cleanup Vite bila disetujui; `.omo/docs/UI_LOGIC_POSITION_MAPPING.md` memetakan logic referensi ke UI redesign. `.env` dan `.env.local` git-ignored; `.env.example` tetap tracked.
 
-Current branch `refactor/structure-mirror-ref` commit `7fd50e1` lib/actions mirror ref. Next migration plan di `.omo/plans/` belum dieksekusi, sudah Momus OKAY final, ENV contract: server-only `STRAPI_API_KEY` + `STRAPI_BASE_URL`, public `NEXT_PUBLIC_STRAPI_BASE_URL` + `NEXT_PUBLIC_CDN_URL`, proxy `/api/*` mandatory, Tailwind KEEP v3.4 pinned next@15.5.4, no `NEXT_PUBLIC_STRAPI_API_KEY`.
+Runtime portal adalah pure Next: `npm run dev`, `npm run build`, dan `npm run start`. ENV contract: server-only `STRAPI_API_KEY` + `STRAPI_BASE_URL`, public `NEXT_PUBLIC_STRAPI_BASE_URL` + `NEXT_PUBLIC_CDN_URL`, proxy `/api/*` mandatory, Tailwind v3.4 dan Next 15.5.4 tetap pinned, dan `NEXT_PUBLIC_STRAPI_API_KEY` dilarang.
 
 ## Reference
 

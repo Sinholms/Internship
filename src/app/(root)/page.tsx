@@ -18,7 +18,7 @@ export default function HomePage() {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    fetch('/api/articles?pagination[pageSize]=3&pagination[limit]=3&populate=*&sort=publication_date:desc&status=published')
+    fetch('/api/articles?pagination[pageSize]=3&populate=*&sort=publication_date:desc&status=published')
       .then(async (r) => {
         if (!r.ok) {
           const txt = await r.text();
