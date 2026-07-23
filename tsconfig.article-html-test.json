@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": ".article-html-test",
+    "rootDir": "src/lib",
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022"
+  },
+  "include": [
+    "src/lib/sanitizeArticleHtml.ts",
+    "src/lib/sanitizeArticleHtml.test.ts"
+  ]
+}

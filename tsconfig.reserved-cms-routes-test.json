@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": ".reserved-cms-routes-test",
+    "rootDir": "src/lib",
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022"
+,
+    "types": ["node"]
+  },
+  "include": [
+    "src/lib/reservedCmsRoutesCore.ts",
+    "src/lib/reservedCmsRoutes.test.ts",
+    "src/types/images.d.ts"
+  ]
+}

@@ -1,52 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BASE_URL_SERVER, getHeadersServer } from '@/lib/api/client.server';
-import qs from 'qs';
+import { buildDetailUrl, detectPrimaryField } from '@/lib/actions/getArticleDetail.server';
+
+function fetchStrapi(url: string, id: string) {
+  return fetch(url, {
+    headers: getHeadersServer(),
+    next: { revalidate: 3600, tags: [`article-${id}`] },
+  });
+}
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const qp = req.nextUrl.searchParams;
 
-  // If client already passes full query, forward that; otherwise try slug eq + fallback
+  // Back-compat: if client passes an explicit query, forward as-is to articles endpoint
   const hasFilters = qp.get('filters[slug][$eq]') || qp.get('filters[documentId][$eq]');
-  
-  let url: string;
   if (hasFilters || qp.toString().includes('populate')) {
-    // Forward as-is but to articles endpoint
     const search = qp.toString();
-    url = `${BASE_URL_SERVER}/articles${search ? `?${search}` : ''}`;
-  } else {
-    // Build slug query for single article
-    const isDocId = /^[a-z0-9]{20,30}$/.test(id);
-    const dashCount = (id.match(/-/g) || []).length;
-    const looksLikeSlug = dashCount >= 3 && id.length > 30;
-    const filterField = !looksLikeSlug && isDocId ? 'documentId' : 'slug';
-    const q = qs.stringify(
-      {
-        filters: { [filterField]: { $eq: id } },
-        populate: {
-          category: { fields: ['name', 'slug'] },
-          tags: { fields: ['name', 'slug'] },
-          author: { fields: ['firstname', 'lastname'] },
-          featuredImage: { populate: '*' },
-          relatedArticles: { populate: { articles: { populate: { featuredImage: { populate: '*' }, category: { fields: ['name', 'slug'] } } } } },
-          pdfViewer: { populate: '*' },
-        },
-      },
-      { encodeValuesOnly: true }
-    );
-    url = `${BASE_URL_SERVER}/articles?${q}`;
+    const url = `${BASE_URL_SERVER}/articles${search ? `?${search}` : ''}`;
+    try {
+      const res = await fetchStrapi(url, id);
+      const json = await res.json();
+      return NextResponse.json(json, { status: res.ok ? 200 : res.status });
+    } catch (e) {
+      console.error('[article-detail-proxy] upstream request failed', e);
+      return NextResponse.json({ error: 'Gagal memuat artikel.' }, { status: 502 });
+    }
   }
 
+  // Scoped detail: server owns query, slug/docId detection, and slug<->docId fallback
+  const primary = detectPrimaryField(id);
+  const fallback: 'slug' | 'documentId' = primary === 'slug' ? 'documentId' : 'slug';
+
   try {
-    const res = await fetch(url, {
-      headers: getHeadersServer(),
-      next: { revalidate: 3600, tags: [`article-${id}`] },
-    });
-    const json = await res.json();
+    let res = await fetchStrapi(buildDetailUrl(primary, id), id);
+    let json = await res.json();
     if (!res.ok) return NextResponse.json(json, { status: res.status });
-    // If single fetch via filters returns list, normalize to single or list as requested
+
+    const data = Array.isArray(json?.data) ? json.data : [];
+    if (data.length === 0) {
+      res = await fetchStrapi(buildDetailUrl(fallback, id), id);
+      json = await res.json();
+      if (!res.ok) return NextResponse.json(json, { status: res.status });
+    }
     return NextResponse.json(json, { status: 200 });
   } catch (e) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    console.error('[article-detail-proxy] upstream request failed', e);
+    return NextResponse.json({ error: 'Gagal memuat artikel.' }, { status: 502 });
   }
 }
