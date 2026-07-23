@@ -5,7 +5,6 @@ import containerQueries from '@tailwindcss/container-queries'
 export default {
   darkMode: "class",
 content: [
-"./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
     "./src/app/**/*.{js,ts,jsx,tsx}",
 ],
