@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getStrapiImageUrl } from '@/lib/getStrapiImageUrl';
 import type { ArticleCMS } from '@/types/cms';
+import ProfileArticleContent from './ProfileArticleContent';
 
 export default function ProfilPage() {
   const [profilArticles, setProfilArticles] = useState<ArticleCMS[]>([]);
@@ -120,11 +121,7 @@ export default function ProfilPage() {
                     <img src={imgUrl} alt={article.title} className="mt-6 w-full h-64 object-cover rounded-xl" />
                   )}
 
-                  <div className="mt-5">
-                    {/* Content HTML dari CMS - render dengan prose styling yang sama dengan design system */}
-                    <div className="prose max-w-none text-body-md font-body-md text-on-surface-variant prose-headings:text-primary prose-p:text-on-surface-variant prose-a:text-primary prose-img:rounded-xl prose-img:w-full prose-headings:font-headline-lg prose-headings:text-headline-lg leading-relaxed space-y-4"
-                         dangerouslySetInnerHTML={{ __html: article.content || '<p>Konten tidak tersedia.</p>' }} />
-                  </div>
+                  <div className="mt-5"><ProfileArticleContent content={article.content || ''} /></div>
 
                   <div className="mt-6 flex flex-wrap gap-2">
                     <Link href={`/berita/${article.slug}`} className="inline-flex items-center gap-2 bg-primary text-on-primary px-4 py-2 rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity">
