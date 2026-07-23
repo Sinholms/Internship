@@ -5,47 +5,110 @@ import Link from 'next/link';
 import heroFallback from '@/assets/foto-kominfo.png';
 import { getStrapiImageUrl } from '@/lib/getStrapiImageUrl';
 import { formatDateID } from '@/lib/formatDate';
+import { adaptHomePage } from '@/lib/adaptHomePage';
 import type { ArticleCMS } from '@/types/cms';
+
+type RecordValue = Readonly<Record<string, unknown>>;
+
+function isRecord(value: unknown): value is RecordValue {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
 
 export default function HomePage() {
   const [latestNews, setLatestNews] = useState<ArticleCMS[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const heroSrc = (heroFallback as any)?.src || (heroFallback as any) || '';
+  const heroSrc = typeof heroFallback === 'string' ? heroFallback : heroFallback.src;
+  const [cmsHeroSrc, setCmsHeroSrc] = useState<string | null>(null);
+  const [latestArticlesLimit, setLatestArticlesLimit] = useState(3);
+  const [latestArticlesCategory, setLatestArticlesCategory] = useState<string | null>(null);
+  const [homeConfigReady, setHomeConfigReady] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
+
+    fetch('/api/home-page', { signal: controller.signal })
+      .then(async response => {
+        if (!response.ok) throw new Error(`Home page request failed with status ${response.status}`);
+        return response.json();
+      })
+      .then(payload => {
+        const config = adaptHomePage(payload);
+        setCmsHeroSrc(config.heroImageUrl);
+        setLatestArticlesLimit(config.latestArticlesLimit);
+        setLatestArticlesCategory(config.latestArticlesCategory);
+        setHomeConfigReady(true);
+      })
+      .catch(error => {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+        console.warn('[HomePage] CMS home data unavailable; using static home fallbacks');
+        setHomeConfigReady(true);
+      });
+
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (!homeConfigReady) return;
+
+    const controller = new AbortController();
     setLoading(true);
     setError(null);
-    fetch('/api/articles?pagination[pageSize]=3&populate=*&sort=publication_date:desc&status=published')
+
+    const params = new URLSearchParams({
+      'pagination[pageSize]': String(latestArticlesLimit),
+      populate: '*',
+      sort: 'publication_date:desc',
+      status: 'published',
+    });
+    if (latestArticlesCategory) {
+      params.set('filters[category][slug][$eq]', latestArticlesCategory);
+    }
+
+    fetch(`/api/articles?${params.toString()}`, { signal: controller.signal })
       .then(async (r) => {
         if (!r.ok) {
           const txt = await r.text();
           throw new Error(`${r.status} ${txt.slice(0, 200)}`);
         }
-        return r.json();
+        const payload: unknown = await r.json();
+        return payload;
       })
       .then((j) => {
-        if (cancelled) return;
-        setLatestNews(j.data || []);
+        setLatestNews(isArticleListResponse(j) ? j.data : []);
         setLoading(false);
       })
       .catch((e) => {
-        if (cancelled) return;
-        setError((e as Error).message);
+        if (e instanceof DOMException && e.name === 'AbortError') return;
+        setError(e instanceof Error ? e.message : 'Permintaan berita gagal');
         setLoading(false);
       });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    return () => controller.abort();
+  }, [homeConfigReady, latestArticlesCategory, latestArticlesLimit]);
+
+  function isArticleListResponse(value: unknown): value is { readonly data: ArticleCMS[] } {
+    if (!isRecord(value) || !Array.isArray(value.data)) return false;
+    return value.data.every(isArticleCMS);
+  }
+
+  function isArticleCMS(value: unknown): value is ArticleCMS {
+    if (!isRecord(value)) return false;
+    const article = value;
+    return typeof article.id === 'number'
+      && typeof article.documentId === 'string'
+      && typeof article.title === 'string'
+      && typeof article.slug === 'string'
+      && typeof article.content === 'string'
+      && typeof article.createdAt === 'string'
+      && typeof article.updatedAt === 'string'
+      && typeof article.publishedAt === 'string';
+  }
 
   return (
     <>
       {/* Hero Section Slider */}
       <section className="relative h-[500px] md:h-[600px] overflow-hidden">
-        <div className="absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000" style={{ backgroundImage: `url(${heroSrc})` }}>
+        <div className="absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000" style={{ backgroundImage: `url(${cmsHeroSrc || heroSrc})` }}>
           <div className="absolute inset-0 hero-gradient"></div>
         </div>
 
