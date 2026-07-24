@@ -5,13 +5,22 @@ import Link from 'next/link';
 import type { ArticleCMS } from '@/types/cms';
 
 interface DocItem {
+title: string;
+type: string;
+size: string;
+icon: string;
+slug: string;
+href: string;
+}
+
+interface StaticDocItem {
   title: string;
   type: string;
   size: string;
   icon: string;
 }
 
-const staticDocs: DocItem[] = [
+const staticDocs: StaticDocItem[] = [
   { title: "Peraturan Bupati tentang SPBE", type: "PDF", size: "1.2MB", icon: "picture_as_pdf" },
   { title: "Formulir Permohonan Informasi Publik", type: "DOCX", size: "240KB", icon: "description" },
   { title: "Data Statistik Sektoral 2023", type: "XLSX", size: "890KB", icon: "table" },
@@ -41,16 +50,19 @@ export default function UnduhanPage() {
   }, []);
 
   // If CMS has download articles, transform them to doc list, otherwise static
-  const docs = downloadArticles.length > 0
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ? downloadArticles.map(a => ({
-        title: a.title,
-        type: (a as any).fileType || 'PDF',
-        size: '-',
-        icon: 'picture_as_pdf',
-        slug: a.slug,
-        href: `/berita/${a.slug}`,
-      }))
+  const docs: DocItem[] = downloadArticles.length > 0
+    ? downloadArticles.map(a => {
+        const ext = a.pdfViewer?.pdf?.ext?.replace(/^\./, '').toUpperCase();
+        const mimeType = a.pdfViewer?.pdf?.mime?.split('/').pop()?.toUpperCase();
+        return {
+          title: a.title,
+          type: ext || mimeType || 'PDF',
+          size: '-',
+          icon: 'picture_as_pdf',
+          slug: a.slug,
+          href: `/berita/${a.slug}`,
+        };
+      })
     : staticDocs.map(d => ({ ...d, href: '#', slug: '' }));
 
   return (
@@ -78,16 +90,14 @@ export default function UnduhanPage() {
           {docs.map((doc, i) => (
             <div key={i} className="bg-surface-white rounded-xl border border-border-light shadow-sm p-4 md:p-6 flex flex-col sm:flex-row sm:items-center gap-4 hover:shadow-md transition-shadow">
               <div className="w-12 h-12 rounded-lg bg-primary-fixed text-primary flex items-center justify-center shrink-0">
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                <span className="material-symbols-outlined">{(doc as any).icon}</span>
+                <span className="material-symbols-outlined">{doc.icon}</span>
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-label-md text-label-md font-bold text-primary truncate">{doc.title}</h3>
-                <p className="text-label-sm font-label-sm text-on-surface-variant mt-1">{doc.type} · {(doc as any).size}</p>
+                <p className="text-label-sm font-label-sm text-on-surface-variant mt-1">{doc.type} · {doc.size}</p>
               </div>
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              {(doc as any).href && (doc as any).href !== '#' ? (
-                <Link href={(doc as any).href} className="inline-flex items-center gap-2 bg-primary text-on-primary px-5 py-2.5 rounded-lg font-label-md text-label-md font-bold hover:opacity-90 transition-opacity shrink-0">
+              {doc.href && doc.href !== '#' ? (
+                <Link href={doc.href} className="inline-flex items-center gap-2 bg-primary text-on-primary px-5 py-2.5 rounded-lg font-label-md text-label-md font-bold hover:opacity-90 transition-opacity shrink-0">
                   <span className="material-symbols-outlined text-[18px]">visibility</span> Lihat
                 </Link>
               ) : (
