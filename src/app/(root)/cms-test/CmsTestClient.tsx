@@ -5,18 +5,56 @@ import Link from 'next/link';
 import { getStrapiImageUrl } from '@/lib/getStrapiImageUrl';
 
 interface RawTestResult {
-  status: number;
-  ok: boolean;
-  count?: number;
-  sample?: string;
-  error?: string;
+status: number;
+ok: boolean;
+count?: number;
+sample?: string;
+error?: string;
+}
+
+interface StrapiListResponse {
+  data?: unknown;
+  meta?: { pagination?: { total?: number } };
+}
+
+function isStrapiListResponse(value: unknown): value is StrapiListResponse {
+  return typeof value === 'object' && value !== null;
+}
+
+function extractCount(json: StrapiListResponse): number {
+  const total = json.meta?.pagination?.total;
+  if (typeof total === 'number') return total;
+  if (Array.isArray(json.data)) return json.data.length;
+  return json.data ? 1 : 0;
+}
+
+function extractFirstTitle(json: StrapiListResponse): string {
+  const data = json.data;
+  if (Array.isArray(data)) {
+    const first = data[0];
+    if (typeof first === 'object' && first !== null && 'title' in first && typeof (first as { title?: unknown }).title === 'string') {
+      return (first as { title: string }).title;
+    }
+    return '';
+  }
+  if (typeof data === 'object' && data !== null && 'title' in data && typeof (data as { title?: unknown }).title === 'string') {
+    return (data as { title: string }).title;
+  }
+  return '';
+}
+
+function extractSiteName(json: StrapiListResponse): string | null {
+  const data = json.data;
+  if (typeof data === 'object' && data !== null && 'siteName' in data && typeof (data as { siteName?: unknown }).siteName === 'string') {
+    return (data as { siteName: string }).siteName;
+  }
+  return null;
 }
 
 interface Props {
   env?: {
     baseUrl: string;
     cdnUrl: string;
-    apiKeyMasked: string;
     hasKey: boolean;
   };
 }
@@ -24,7 +62,6 @@ interface Props {
 export default function CmsTestClient({ env: serverEnv }: Props) {
   const displayBaseUrl = serverEnv?.baseUrl || 'https://cms.dinkominfo.pekalongankab.go.id';
   const displayCdnUrl = serverEnv?.cdnUrl || 'https://cdn.pekalongankab.go.id';
-  const maskedKey = serverEnv?.apiKeyMasked || 'NOT SET (server)';
   const hasKey = serverEnv?.hasKey ?? false;
 
   const [rawTests, setRawTests] = useState<Record<string, RawTestResult>>({});
@@ -49,13 +86,14 @@ export default function CmsTestClient({ env: serverEnv }: Props) {
       tests.map(async ({ name, url }) => {
         try {
           const res = await fetch(url);
-          const json = await res.json().catch(() => ({}));
-          const count = (json as any)?.meta?.pagination?.total ?? (Array.isArray((json as any)?.data) ? (json as any).data.length : (json as any)?.data ? 1 : 0);
+          const rawJson: unknown = await res.json().catch(() => ({}));
+          const json = isStrapiListResponse(rawJson) ? rawJson : {};
+          const count = extractCount(json);
           if (name === 'articles' && !cancelled) {
-            setArticlesSample({ count, title: (json as any)?.data?.[0]?.title || (json as any)?.data?.title || '' });
+            setArticlesSample({ count, title: extractFirstTitle(json) });
           }
           if (name === 'categories' && !cancelled) setCategoriesCount(count);
-          if (name === 'global' && !cancelled) setGlobalName((json as any)?.data?.siteName || null);
+          if (name === 'global' && !cancelled) setGlobalName(extractSiteName(json));
           return {
             name,
             result: {
@@ -63,11 +101,11 @@ export default function CmsTestClient({ env: serverEnv }: Props) {
               ok: res.ok,
               count,
               sample: JSON.stringify(json).slice(0, 200) + '...',
-              error: !res.ok ? JSON.stringify(json).slice(0, 500) : undefined,
+              error: !res.ok ? 'Permintaan proxy gagal.' : undefined,
             } as RawTestResult,
           };
-        } catch (e) {
-          return { name, result: { status: 0, ok: false, error: (e as Error).message } as RawTestResult };
+        } catch {
+          return { name, result: { status: 0, ok: false, error: 'Permintaan proxy gagal.' } as RawTestResult };
         }
       })
     ).then(results => {
@@ -99,9 +137,9 @@ export default function CmsTestClient({ env: serverEnv }: Props) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-label-sm font-mono">
           <div><span className="text-on-surface-variant">NEXT_PUBLIC_STRAPI_BASE_URL:</span> <span className="text-primary font-bold">{displayBaseUrl}</span></div>
           <div><span className="text-on-surface-variant">NEXT_PUBLIC_CDN_URL:</span> <span className="text-primary font-bold">{displayCdnUrl}</span></div>
-          <div><span className="text-on-surface-variant">STRAPI_API_KEY (masked server):</span> <span className={hasKey ? 'text-green-700' : 'text-error font-bold'}>{maskedKey}</span></div>
-          <div><span className="text-on-surface-variant">Proxy mode:</span> <span className="text-primary font-bold">/api/* → server Bearer (no token in client bundle)</span></div>
-          <div><span className="text-on-surface-variant">ENV file:</span> <span className="text-on-surface-variant">.env.local NEXT — server-only STRAPI_API_KEY</span></div>
+          <div><span className="text-on-surface-variant">CMS credential configured:</span> <span className={hasKey ? 'text-green-700' : 'text-error font-bold'}>{hasKey ? 'yes' : 'no'}</span></div>
+          <div><span className="text-on-surface-variant">Proxy mode:</span> <span className="text-primary font-bold">/api/* → server authentication (no credential in client bundle)</span></div>
+          <div><span className="text-on-surface-variant">ENV mode:</span> <span className="text-on-surface-variant">development server-only configuration</span></div>
           <div><span className="text-on-surface-variant">Image rewrite:</span> <span className="text-on-surface-variant">{getStrapiImageUrl('/uploads/test.jpg')}</span></div>
         </div>
       </div>
@@ -140,7 +178,7 @@ export default function CmsTestClient({ env: serverEnv }: Props) {
                 </div>
               </div>
               <div className="text-label-sm font-mono text-on-surface-variant max-w-[300px] truncate">
-                {result.error ? `ERR: ${result.error.slice(0, 100)}` : result.sample?.slice(0, 80)}
+                {result.error ? 'ERR: Proxy request failed' : result.sample?.slice(0, 80)}
               </div>
             </div>
           ))}
@@ -149,10 +187,10 @@ export default function CmsTestClient({ env: serverEnv }: Props) {
       </div>
 
       <div className="mt-6 bg-surface-container-low rounded-xl p-6">
-        <h2 className="font-label-md font-bold text-primary">Verifikasi Token Tidak di Client Bundle (Phase5 QA)</h2>
+        <h2 className="font-label-md font-bold text-primary">Verifikasi Credential Tidak di Client Bundle (Phase5 QA)</h2>
         <pre className="bg-surface-white border border-border-light rounded-lg p-3 overflow-auto text-xs mt-3">
-{`# After npm run build, check no token in static bundle:
-grep -r "STRAPI_API_KEY" .next/static/  # should 0 results
+{`# After npm run build, inspect static bundle for credential values:
+grep -r "replace-with-real-secret" .next/static/  # should 0 results
 grep -r "NEXT_PUBLIC_[REDACTED]_KEY" src/  # must 0
 grep -r "f2f" .next/  # no raw token
 
