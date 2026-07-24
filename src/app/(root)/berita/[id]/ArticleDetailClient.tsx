@@ -8,23 +8,13 @@ import { formatDateID } from '@/lib/formatDate';
 import { sanitizeArticleHtml } from '@/lib/sanitizeArticleHtml';
 import { resolveArticlePdf } from '@/lib/articlePdfCore';
 import type { ArticleCMS } from '@/types/cms';
-
-function isStrapiDocumentId(id: string): boolean {
-  // Strapi v5 documentId: 25 chars alphanumeric lowercase, e.g. "a3rkzd3y47hqddmhtso115np"
-  // Slug: kebab-case with words > 2, length usually > 30, contains multiple dashes + readable words
-  if (!id) return false;
-  if (/[A-Z\s]/.test(id)) return false;
-  const dashCount = (id.match(/-/g) || []).length;
-  if (dashCount >= 3 && id.length > 30) return false;
-  if (/^[a-z0-9]{20,30}$/.test(id)) return true;
-  return false;
-}
+import { detectArticleIdentifierField } from '@/lib/articleIdentifier';
 
 export default function ArticleDetailClient() {
   const params = useParams<{ id: string }>();
   const id = params?.id as string | undefined;
   const idStr = id || '';
-  const isDocId = isStrapiDocumentId(idStr);
+  const isDocId = detectArticleIdentifierField(idStr) === 'documentId';
 
   const [article, setArticle] = useState<ArticleCMS | null>(null);
   const [related, setRelated] = useState<ArticleCMS[]>([]);

@@ -10,7 +10,8 @@
     "lint": "oxlint",
     "test:article-html": "tsc --project tsconfig.article-html-test.json && node --test .article-html-test/sanitizeArticleHtml.test.js",
     "test:article-pdf": "tsc --project tsconfig.article-pdf-test.json && node --test .article-pdf-test/lib/articlePdfCore.test.js",
-    "test:reserved-cms-routes": "tsc --project tsconfig.reserved-cms-routes-test.json && node --test .reserved-cms-routes-test/reservedCmsRoutes.test.js"
+    "test:reserved-cms-routes": "tsc --project tsconfig.reserved-cms-routes-test.json && node --test .reserved-cms-routes-test/reservedCmsRoutes.test.js",
+    "test:public-cms-proxy-query": "tsc --project tsconfig.public-cms-proxy-query-test.json && node --test .public-cms-proxy-query-test/publicCmsProxyQuery.test.js"
   },
   "dependencies": {
     "dompurify": "^3.4.12",

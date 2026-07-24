@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": ".public-cms-proxy-query-test",
+    "rootDir": "src/lib/api",
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022",
+    "types": ["node"]
+  },
+  "include": [
+    "src/lib/api/publicCmsProxyQuery.ts",
+    "src/lib/api/publicCmsProxyQuery.test.ts"
+  ]
+}

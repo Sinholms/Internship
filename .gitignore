@@ -35,3 +35,9 @@ CMS_STATUS*.md
 CMS_INTEGRATION_STATUS.md
 NEXT_AGENT*.md
 .playwright-mcp
+
+# Test script output dirs
+/.article-html-test/
+/.article-pdf-test/
+/.public-cms-proxy-query-test/
+/.reserved-cms-routes-test/

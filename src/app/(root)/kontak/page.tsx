@@ -34,7 +34,7 @@ export default async function KontakPage() {
   const contact = await fetchContactServer();
 
   const featuredUrl = contact?.featuredImage
-    ? getStrapiImageUrl((contact.featuredImage.formats as any)?.small?.url || contact.featuredImage.url)
+    ? getStrapiImageUrl(contact.featuredImage.formats?.small?.url || contact.featuredImage.url)
     : null;
 
   return (
