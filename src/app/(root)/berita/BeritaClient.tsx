@@ -16,10 +16,11 @@ export default function BeritaClient({ initialData }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const query = searchParams?.get('query') || undefined;
-  const categoryParam = searchParams?.get('category') || undefined;
-  const pageParam = parseInt(searchParams?.get('page') || '1', 10);
+  const rawCategoryParam = searchParams?.get('category')?.trim() || '';
+  const rawPageParam = parseInt(searchParams?.get('page') || '1', 10);
+  const pageParam = Number.isFinite(rawPageParam) && rawPageParam > 0 ? rawPageParam : 1;
 
-  const [activeCat, setActiveCat] = useState<string>(categoryParam || 'Semua');
+  const [activeSlug, setActiveSlug] = useState<string>(rawCategoryParam);
   const [articles, setArticles] = useState<ArticleCMS[]>(initialData?.articles || []);
   const [pageCount, setPageCount] = useState(initialData?.pageCount || 1);
   const [total, setTotal] = useState(initialData?.total || 0);
@@ -51,7 +52,7 @@ export default function BeritaClient({ initialData }: Props) {
         sort: 'publication_date:desc',
         filters: {
           $or: query ? [{ title: { $containsi: query } }, { content: { $containsi: query } }, { tags: { name: { $containsi: query } } }] : undefined,
-          category: activeCat !== 'Semua' ? { slug: { $containsi: activeCat } } : undefined,
+          category: activeSlug ? { slug: { $eq: activeSlug } } : undefined,
           publication_date: { $lte: new Date().toISOString() },
         },
         populate: '*',
@@ -84,9 +85,9 @@ export default function BeritaClient({ initialData }: Props) {
       });
 
     return () => { cancelled = true; };
-  }, [query, activeCat, pageParam]);
+  }, [query, activeSlug, pageParam]);
 
-  const filterCategories = ['Semua', ...(categories?.map(c => c.name) || ['Teknologi', 'Layanan', 'Informasi'])];
+  const filterCategories = [{ name: 'Semua', slug: '' }, ...(categories?.map(c => ({ name: c.name, slug: c.slug })) || [])];
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -98,11 +99,11 @@ export default function BeritaClient({ initialData }: Props) {
     router.push(`/berita?${newParams.toString()}`);
   };
 
-  const handleCategory = (cat: string) => {
-    setActiveCat(cat);
+  const handleCategory = (slug: string) => {
+    setActiveSlug(slug);
     const newParams = new URLSearchParams(searchParams?.toString() || '');
-    if (cat === 'Semua') newParams.delete('category');
-    else newParams.set('category', cat);
+    if (!slug) newParams.delete('category');
+    else newParams.set('category', slug);
     newParams.set('page', '1');
     router.push(`/berita?${newParams.toString()}`);
   };
@@ -148,17 +149,17 @@ export default function BeritaClient({ initialData }: Props) {
               <button type="submit" className="px-4 py-2 rounded-lg bg-primary text-on-primary text-label-md font-label-md hover:bg-primary-container focus:outline-none focus:ring-2 focus:ring-primary transition-colors">Cari</button>
             </form>
             <div className="flex flex-wrap gap-2" aria-label="Filter kategori berita">
-              {filterCategories.slice(0, 6).map((cat) => (
+              {filterCategories.map((cat) => (
                 <button
-                  key={cat}
-                  onClick={() => handleCategory(cat)}
-                  className={activeCat === cat
+                  key={cat.slug || 'semua'}
+                  onClick={() => handleCategory(cat.slug)}
+                  className={activeSlug === cat.slug
                     ? "px-4 py-2 rounded-full bg-primary text-on-primary text-label-md font-label-md"
                     : "px-4 py-2 rounded-full bg-surface-white border border-border-light text-on-surface-variant text-label-md font-label-md hover:border-primary hover:text-primary transition-colors"}
                   type="button"
-                  aria-pressed={activeCat === cat}
+                  aria-pressed={activeSlug === cat.slug}
                 >
-                  {cat}
+                  {cat.name}
                 </button>
               ))}
             </div>
@@ -189,21 +190,21 @@ export default function BeritaClient({ initialData }: Props) {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-gutter">
               {articles.map(article => {
-                const img = (article as any).featuredImage
-                  ? getStrapiImageUrl((article as any).featuredImage.formats?.medium?.url || (article as any).featuredImage.formats?.small?.url || (article as any).featuredImage.url)
-                  : `https://picsum.photos/seed/${(article as any).documentId}/640/360`;
-                const desc = (article as any).content ? (article as any).content.replace(/<[^>]*>/g, ' ').slice(0, 140) + '...' : 'Informasi selengkapnya dari Dinkominfo.';
+                const img = article.featuredImage
+                  ? getStrapiImageUrl(article.featuredImage.formats?.medium?.url || article.featuredImage.formats?.small?.url || article.featuredImage.url)
+                  : `https://picsum.photos/seed/${article.documentId}/640/360`;
+                const desc = article.content ? article.content.replace(/<[^>]*>/g, ' ').slice(0, 140) + '...' : 'Informasi selengkapnya dari Dinkominfo.';
                 return (
-                  <article key={(article as any).documentId || (article as any).id} className="bg-surface-white rounded-xl overflow-hidden border border-border-light hover-card flex flex-col">
+                  <article key={article.documentId || article.id} className="bg-surface-white rounded-xl overflow-hidden border border-border-light hover-card flex flex-col">
                     <img alt={article.title} className="h-48 w-full object-cover" width="640" height="360" src={img} loading="lazy" />
                     <div className="p-5 md:p-6 flex flex-col grow">
                       <div className="flex flex-wrap items-center gap-2 mb-3">
-                        <span className="text-label-sm font-label-sm text-primary bg-primary-fixed px-3 py-1 rounded-full">{(article as any).category?.name || 'Informasi'}</span>
-                        <time className="text-label-sm font-label-sm text-on-surface-variant" dateTime={(article as any).publication_date || (article as any).publishedAt}>{formatDateID((article as any).publication_date || (article as any).publishedAt)}</time>
+                        <span className="text-label-sm font-label-sm text-primary bg-primary-fixed px-3 py-1 rounded-full">{article.category?.name || 'Informasi'}</span>
+                        <time className="text-label-sm font-label-sm text-on-surface-variant" dateTime={article.publication_date || article.publishedAt}>{formatDateID(article.publication_date || article.publishedAt)}</time>
                       </div>
                       <h3 className="font-headline-md text-headline-md text-primary leading-tight line-clamp-2">{article.title}</h3>
                       <p className="text-body-md font-body-md text-on-surface-variant line-clamp-2 mt-3">{desc}</p>
-                      <Link className="mt-5 text-primary font-label-md text-label-md font-bold flex items-center gap-2 hover:underline" href={`/berita/${(article as any).slug}`}>Baca Selengkapnya <span className="material-symbols-outlined text-sm">arrow_forward</span></Link>
+                      <Link className="mt-5 text-primary font-label-md text-label-md font-bold flex items-center gap-2 hover:underline" href={`/berita/${article.slug}`}>Baca Selengkapnya <span className="material-symbols-outlined text-sm">arrow_forward</span></Link>
                     </div>
                   </article>
                 );
