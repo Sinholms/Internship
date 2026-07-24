@@ -2,6 +2,7 @@ import 'server-only';
 import qs from 'qs';
 import { BASE_URL_SERVER, getHeadersServer } from '@/lib/api/client.server';
 import type { ArticleCMS } from '@/types/cms';
+import { detectArticleIdentifierField } from '@/lib/articleIdentifier';
 
 export const ARTICLE_DETAIL_POPULATE = {
   category: { fields: ['name', 'slug'] },
@@ -35,10 +36,7 @@ export function buildDetailUrl(field: 'slug' | 'documentId', id: string): string
  * Long kebab-case slugs (dash>=3 && length>30) must be treated as slug.
  */
 export function detectPrimaryField(id: string): 'slug' | 'documentId' {
-  const isDocId = /^[a-z0-9]{20,30}$/.test(id);
-  const dashCount = (id.match(/-/g) || []).length;
-  const looksLikeSlug = dashCount >= 3 && id.length > 30;
-  return !looksLikeSlug && isDocId ? 'documentId' : 'slug';
+  return detectArticleIdentifierField(id);
 }
 
 function fetchStrapi(url: string, id: string) {
