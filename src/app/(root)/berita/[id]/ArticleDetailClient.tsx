@@ -20,6 +20,7 @@ export default function ArticleDetailClient() {
   const [related, setRelated] = useState<ArticleCMS[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!idStr) return;
@@ -163,7 +164,9 @@ export default function ArticleDetailClient() {
           <span className="font-label-md text-label-md text-primary mr-1">Bagikan berita:</span>
           <a aria-label="Facebook" className="w-11 h-11 rounded-full bg-primary text-on-primary inline-flex items-center justify-center hover:bg-primary-container transition-colors" href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`} target="_blank" rel="noopener noreferrer"><span className="material-symbols-outlined" aria-hidden="true">thumb_up</span></a>
           <a aria-label="WhatsApp" className="w-11 h-11 rounded-full bg-surface-container-low text-primary inline-flex items-center justify-center hover:bg-primary-fixed transition-colors" href={`https://wa.me/?text=${encodeURIComponent(article.title + ' ' + (typeof window !== 'undefined' ? window.location.href : ''))}`} target="_blank" rel="noopener noreferrer"><span className="material-symbols-outlined" aria-hidden="true">chat</span></a>
-          <button aria-label="Salin tautan" className="w-11 h-11 rounded-full bg-surface-container-low text-primary inline-flex items-center justify-center hover:bg-primary-fixed transition-colors" onClick={() => { navigator.clipboard.writeText(window.location.href); alert('Link disalin!'); }}><span className="material-symbols-outlined" aria-hidden="true">link</span></button>
+          <a aria-label="X (Twitter)" className="w-11 h-11 rounded-full bg-surface-container-low text-primary inline-flex items-center justify-center hover:bg-primary-fixed transition-colors" href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(article.title)}&url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`} target="_blank" rel="noopener noreferrer"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+          <button aria-label="Salin tautan" className="w-11 h-11 rounded-full bg-surface-container-low text-primary inline-flex items-center justify-center hover:bg-primary-fixed transition-colors" onClick={() => { navigator.clipboard.writeText(window.location.href).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }).catch(() => {}); }}><span className="material-symbols-outlined" aria-hidden="true">{copied ? 'check' : 'link'}</span></button>
+          {copied && <span role="status" className="text-label-sm font-label-sm text-primary">Tautan disalin!</span>}
         </div>
       </article>
 
