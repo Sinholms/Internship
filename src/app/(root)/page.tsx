@@ -16,6 +16,7 @@ function isRecord(value: unknown): value is RecordValue {
 
 export default function HomePage() {
   const [latestNews, setLatestNews] = useState<ArticleCMS[]>([]);
+  const [newsPool, setNewsPool] = useState<ArticleCMS[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const heroSrc = typeof heroFallback === 'string' ? heroFallback : heroFallback.src;
@@ -46,6 +47,34 @@ export default function HomePage() {
       });
 
     return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const params = new URLSearchParams({
+      'pagination[pageSize]': '10',
+      populate: '*',
+      sort: 'publication_date:desc',
+      status: 'published',
+    });
+
+    fetch(`/api/articles?${params.toString()}`, { signal: controller.signal })
+      .then(async (r) => {
+        if (!r.ok) throw new Error(String(r.status));
+        const payload: unknown = await r.json();
+        return payload;
+      })
+      .then((j) => {
+        setNewsPool(isArticleListResponse(j) ? j.data : []);
+      })
+      .catch((e) => {
+        if (e instanceof DOMException && e.name === 'AbortError') return;
+        console.warn('[HomePage] CMS article pool unavailable; using static section fallbacks');
+      });
+
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -103,6 +132,40 @@ export default function HomePage() {
       && typeof article.updatedAt === 'string'
       && typeof article.publishedAt === 'string';
   }
+
+  const latestIds = new Set(latestNews.map(a => a.documentId));
+  const kabupatenNews = newsPool.filter(a => !latestIds.has(a.documentId)).slice(0, 2);
+
+  const kabupatenItems = kabupatenNews.length > 0
+    ? kabupatenNews.map(a => ({
+        key: a.documentId,
+        date: formatDateID(a.publication_date || a.publishedAt),
+        title: a.title,
+        href: `/berita/${a.slug}`,
+        img: a.featuredImage?.url
+          ? getStrapiImageUrl(a.featuredImage.formats?.small?.url || a.featuredImage.url)
+          : heroSrc,
+      }))
+    : [
+        { key: 'fallback-1', date: '22 Sep 2024', title: 'WaliKabupaten Pekalongan Tinjau Implementasi SPBE di Setiap OPD', href: '/berita', img: heroSrc },
+        { key: 'fallback-2', date: '20 Jun 2023', title: 'Peringatan Hari Jadi Kabupaten Pekalongan ke-117: Sinergi Menuju Era Digital', href: '/berita', img: heroSrc },
+      ];
+
+  const galleryFallback = [
+    { title: 'Rapat Koordinasi Jaringan Komunikasi Sandi', img: 'https://dinkominfo.pekalongankab.go.id/_next/image?url=https%3A%2F%2Fcdn.pekalongankab.go.id%2Fuploads%2FRakor_JKS_1265587acc.jpeg&w=3840&q=75' },
+    { title: 'Keamanan Siber', img: 'https://dinkominfo.pekalongankab.go.id/_next/image?url=https%3A%2F%2Fcdn.pekalongankab.go.id%2Fuploads%2FKemanan_Siber_3_2a13d3ee69.jpeg&w=3840&q=75' },
+    { title: 'Sosialisasi Keamanan Siber', img: 'https://dinkominfo.pekalongankab.go.id/_next/image?url=https%3A%2F%2Fcdn.pekalongankab.go.id%2Fuploads%2FKemanan_Siber_2_16c34baee7.jpeg&w=3840&q=75' },
+    { title: 'Halal Bihalal Dinkominfo', img: 'https://dinkominfo.pekalongankab.go.id/_next/image?url=https%3A%2F%2Fcdn.pekalongankab.go.id%2Fuploads%2FHalal_Bihalal_3_1505332cd6.jpeg&w=3840&q=75' },
+    { title: 'Silaturahmi Pegawai', img: 'https://dinkominfo.pekalongankab.go.id/_next/image?url=https%3A%2F%2Fcdn.pekalongankab.go.id%2Fuploads%2FHalal_Bihalal_4_1d897512af.jpeg&w=3840&q=75' },
+  ];
+
+  const cmsGallery = newsPool.flatMap(a => {
+    const img = a.featuredImage?.url
+      ? getStrapiImageUrl(a.featuredImage.formats?.large?.url || a.featuredImage.formats?.medium?.url || a.featuredImage.url)
+      : null;
+    return img ? [{ title: a.title, img }] : [];
+  });
+  const galleryItems = [...cmsGallery, ...galleryFallback].slice(0, 5);
 
   return (
     <>
@@ -202,14 +265,10 @@ export default function HomePage() {
 
         {!loading && latestNews.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-gutter">
-            {latestNews.map((article, idx) => {
+            {latestNews.map((article) => {
               const imgUrl = article.featuredImage?.url
                 ? getStrapiImageUrl(article.featuredImage.formats?.medium?.url || article.featuredImage.formats?.small?.url || article.featuredImage.url)
-                : idx === 0
-                ? 'https://lh3.googleusercontent.com/aida/AP1WRLutnS1yk1PDpdvJbCHW5w6vFZA00p_BbsnXoCGGuBlv9SWfYiJP10V5gO8huzcpzuSu-S30NBUrh4ml9rezuV2_Wt9_LMLCzLfaJkHKT6jJT5gLdn3RuRaGqtiwn9hjHbuZzSu-S30NBUrh4ml9rezuV2_Wt9_LMLCzLfaJkHKT6jJT5gLdn3RuRaGqtiwn9hjHbuZzSu-S30NBUrh4ml9rezuV2_Wt9_LMLCzLfaJkHKT6jJT5gLdn3RuRaGqtiwn9hjHbuZzSu-S30NBUrh4ml9rezuV2_Wt9_LMLCzLfaJkHKT6jJT5gLdn3RuRaGqtiwn9hjHbuZ6U5I0eDr0OVjaKckOQlmoQ3iJo9cSXRPOEanGikv65JWNi3N5akeI5f3qUBSTO5GShQKBjO22vShTZDYaKuwBiK0LrxN6OVhafT5ih8Zcw9ISl_fKkcf4g'
-                : idx === 1
-                ? 'https://lh3.googleusercontent.com/aida/AP1WRLvksu0S6OapdFlHm1gKHa1xzZbeXWs50AifqSrNxjxi1OxGJM6jaH2FciZlRt5ZPpbHtYX5z45ZSVDjsvJ8v3TkLMIFhSvRmFcuMbx13DlwOArpXWjmCnF3swpF99nbju6zqWjDm0CoIUtElSIWyPkmp-JyP2vB-U00sy2IeyK-1lQWEzCsq4YHghlrGyuim7a22BYC-JNJZMuEIe8ypR_oqkMFaqCWy6kkjsLCvf9fDA8r8ZnEipP3BD-CtedGQghMGRKo7532zrw5pLxa5QaRwMw'
-                : 'https://lh3.googleusercontent.com/aida/AP1WRLunMgCt3-NhHNQZmIt1uIAyMQjjgIdsfnv11tWBn5JxJzBZLVDH1k0FCgBmpcb71dMwtB3gXrYbB6ZvKpCVsX8XUGZJiIPPpB_jFHxI-7Itb43iJDBcRpXYdYh7ij8_fQM3DBC0lpxlA8b3EyMMlqUPOBaI_hInH_-ZxCvvlrqMins5gj_2n0BljGn7kxNNk3G8vCNq2tt82FwlEMZZVO45SEhtdAIukpzqEG1n5E5czZObbgnKG6Lf';
+                : heroSrc;
 
               const excerpt = article.content
                 ? article.content.replace(/<[^>]*>/g, ' ').slice(0, 150) + '...'
@@ -251,23 +310,16 @@ export default function HomePage() {
               </div>
 
               <div className="space-y-4 md:space-y-6">
-                <div className="flex gap-4 md:gap-6 bg-surface-white p-3 md:p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                  <div className="w-24 h-20 md:w-32 md:h-24 rounded-lg bg-cover bg-center shrink-0" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida/AP1WRLtqItnzG9jzjH4lxODXS-pFuHAs1pp9tgQ-3WwvCic8mMeUyBbFBljhtzX0F1xLE4UmetCL1DcfyLP_KZKflmSY5aBDLHwdvuhbkWRwAKvOpVcV4ad4oEwuSosjOKgqt9GQzZ4ML8lawreK3iwFJxFehmr8luewh9pAv-TIQ0GxL3ZPmtgAo9yI5VQ0NenIb3HsLF5ssYzzOd2re6RXq_lMnWXiqUNt-qMEV0Rf6rUiynvjG5klED2a2g')"}}></div>
-                  <div className="flex flex-col justify-center">
-                    <span className="text-label-sm font-label-sm text-on-surface-variant">22 Sep 2024</span>
-                    <h4 className="font-label-md text-label-md text-primary mt-1 line-clamp-2">WaliKabupaten Pekalongan Tinjau Implementasi SPBE di Setiap OPD</h4>
-                    <Link className="text-primary-container font-label-sm text-label-sm mt-2 flex items-center gap-1 hover:underline" href="/berita">Selengkapnya <span className="material-symbols-outlined text-xs">open_in_new</span></Link>
+                {kabupatenItems.map(item => (
+                  <div key={item.key} className="flex gap-4 md:gap-6 bg-surface-white p-3 md:p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                    <div className="w-24 h-20 md:w-32 md:h-24 rounded-lg bg-cover bg-center shrink-0" style={{ backgroundImage: `url('${item.img}')` }}></div>
+                    <div className="flex flex-col justify-center">
+                      <span className="text-label-sm font-label-sm text-on-surface-variant">{item.date}</span>
+                      <h4 className="font-label-md text-label-md text-primary mt-1 line-clamp-2">{item.title}</h4>
+                      <Link className="text-primary-container font-label-sm text-label-sm mt-2 flex items-center gap-1 hover:underline" href={item.href}>Selengkapnya <span className="material-symbols-outlined text-xs">open_in_new</span></Link>
+                    </div>
                   </div>
-                </div>
-
-                <div className="flex gap-4 md:gap-6 bg-surface-white p-3 md:p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                  <div className="w-24 h-20 md:w-32 md:h-24 rounded-lg bg-cover bg-center shrink-0" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida/AP1WRLty4F9fRGw39G9OX2WuYNHMPywVFh2ym2QhJRBlo1WJJIbBLw5JY2aZLL-I2JJGVjJILwFXqawbNAM4aL31-TmCs48mdJzKGIJGMpLeNCoIUtElSIWyPkmp-JyP2vB-U00sy2IeyK-1lQWEzCsq4YHghlrGyuim7a22BYC-JNJZMuEIe8ypR_oqkMFaqCWy6kkjsLCvf9fDA8r8ZnEipP3BD-CtedGQghMGRKo7532zrw5pLxa5QaRwMw')"}}></div>
-                  <div className="flex flex-col justify-center">
-                    <span className="text-label-sm font-label-sm text-on-surface-variant">20 Jun 2023</span>
-                    <h4 className="font-label-md text-label-md text-primary mt-1 line-clamp-2">Peringatan Hari Jadi Kabupaten Pekalongan ke-117: Sinergi Menuju Era Digital</h4>
-                    <Link className="text-primary-container font-label-sm text-label-sm mt-2 flex items-center gap-1 hover:underline" href="/berita">Selengkapnya <span className="material-symbols-outlined text-xs">open_in_new</span></Link>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
 
@@ -302,40 +354,23 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 auto-rows-[150px] md:auto-rows-[200px]">
-          <div className="col-span-2 row-span-2 group relative overflow-hidden rounded-xl md:rounded-2xl">
-            <img alt="Galeri 1" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="https://dinkominfo.pekalongankab.go.id/_next/image?url=https%3A%2F%2Fcdn.pekalongankab.go.id%2Fuploads%2FRakor_JKS_1265587acc.jpeg&w=3840&q=75"/>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4 md:p-6">
-              <span className="text-white font-label-md text-label-md">Rapat Koordinasi Jaringan Komunikasi Sandi</span>
-            </div>
-          </div>
-
-          <div className="group relative overflow-hidden rounded-xl md:rounded-2xl">
-            <img alt="Galeri 2" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="https://dinkominfo.pekalongankab.go.id/_next/image?url=https%3A%2F%2Fcdn.pekalongankab.go.id%2Fuploads%2FKemanan_Siber_3_2a13d3ee69.jpeg&w=3840&q=75"/>
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <span className="material-symbols-outlined text-white text-2xl md:text-3xl">zoom_in</span>
-            </div>
-          </div>
-
-          <div className="group relative overflow-hidden rounded-xl md:rounded-2xl">
-            <img alt="Galeri 3" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="https://dinkominfo.pekalongankab.go.id/_next/image?url=https%3A%2F%2Fcdn.pekalongankab.go.id%2Fuploads%2FKemanan_Siber_2_16c34baee7.jpeg&w=3840&q=75"/>
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <span className="material-symbols-outlined text-white text-2xl md:text-3xl">zoom_in</span>
-            </div>
-          </div>
-
-          <div className="group relative overflow-hidden rounded-xl md:rounded-2xl">
-            <img alt="Galeri 4" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="https://dinkominfo.pekalongankab.go.id/_next/image?url=https%3A%2F%2Fcdn.pekalongankab.go.id%2Fuploads%2FHalal_Bihalal_3_1505332cd6.jpeg&w=3840&q=75"/>
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <span className="material-symbols-outlined text-white text-2xl md:text-3xl">zoom_in</span>
-            </div>
-          </div>
-
-          <div className="group relative overflow-hidden rounded-xl md:rounded-2xl">
-            <img alt="Galeri 5" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="https://dinkominfo.pekalongankab.go.id/_next/image?url=https%3A%2F%2Fcdn.pekalongankab.go.id%2Fuploads%2FHalal_Bihalal_4_1d897512af.jpeg&w=3840&q=75"/>
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <span className="material-symbols-outlined text-white text-2xl md:text-3xl">zoom_in</span>
-            </div>
-          </div>
+          {galleryItems.map((item, idx) => (
+            idx === 0 ? (
+              <div key={idx} className="col-span-2 row-span-2 group relative overflow-hidden rounded-xl md:rounded-2xl">
+                <img alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src={item.img}/>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4 md:p-6">
+                  <span className="text-white font-label-md text-label-md line-clamp-2">{item.title}</span>
+                </div>
+              </div>
+            ) : (
+              <div key={idx} className="group relative overflow-hidden rounded-xl md:rounded-2xl">
+                <img alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src={item.img}/>
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <span className="material-symbols-outlined text-white text-2xl md:text-3xl">zoom_in</span>
+                </div>
+              </div>
+            )
+          ))}
         </div>
       </section>
 
