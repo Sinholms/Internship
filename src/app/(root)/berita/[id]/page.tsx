@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { getStrapiImageUrl } from '@/lib/getStrapiImageUrl';
 import { fetchArticleDetail } from '@/lib/actions/getArticleDetail.server';
 import ArticleDetailClient from './ArticleDetailClient';
+import BreadcrumbJsonLd from '@/components/BreadcrumbJsonLd';
 
 const PORTAL_TITLE = 'Dinkominfo Kabupaten Pekalongan - Portal Informasi Resmi';
 const PORTAL_DESCRIPTION = 'Portal resmi Dinas Komunikasi dan Informatika Kabupaten Pekalongan';
@@ -60,5 +61,15 @@ export default async function ArticleDetailPage({
   if (!article) notFound();
 
   // Client child owns loading/error/share interactions and re-fetches via proxy.
-  return <ArticleDetailClient />;
+  return (
+    <>
+      <BreadcrumbJsonLd
+        items={[
+          { name: 'Berita', path: '/berita' },
+          { name: article.title || 'Detail Berita', path: `/berita/${id}` },
+        ]}
+      />
+      <ArticleDetailClient />
+    </>
+  );
 }
