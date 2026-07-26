@@ -93,9 +93,25 @@ export default function Header() {
           <button aria-label="Cari" className="p-2 rounded-full hover:bg-surface-subtle transition-colors">
             <span className="material-symbols-outlined text-on-surface-variant">search</span>
           </button>
-          <button aria-label={theme === 'dark' ? 'Ganti ke tema terang' : 'Ganti ke tema gelap'} id="theme-toggle" onClick={toggleTheme} className="p-2 rounded-full hover:bg-surface-subtle transition-colors">
-            <span id="theme-icon-light" className={`material-symbols-outlined text-on-surface-variant ${theme === 'dark' ? 'hidden' : ''}`}>dark_mode</span>
-            <span id="theme-icon-dark" className={`material-symbols-outlined text-on-surface-variant ${theme === 'dark' ? '' : 'hidden'}`}>light_mode</span>
+          <button
+            aria-label={theme === 'dark' ? 'Ganti ke tema terang' : 'Ganti ke tema gelap'}
+            role="switch"
+            aria-checked={theme === 'dark'}
+            id="theme-toggle"
+            onClick={toggleTheme}
+            className="p-2 rounded-full hover:bg-surface-subtle transition-colors"
+          >
+            <span
+              className={`relative flex items-center w-14 h-7 rounded-full transition-colors duration-200 ${theme === 'dark' ? 'bg-primary' : 'bg-surface-subtle'}`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 flex items-center justify-center w-6 h-6 rounded-full bg-surface-white shadow transition-transform duration-200 ${theme === 'dark' ? 'translate-x-7' : 'translate-x-0'}`}
+              >
+                <span className="material-symbols-outlined text-primary text-[18px] leading-none">
+                  {theme === 'dark' ? 'dark_mode' : 'light_mode'}
+                </span>
+              </span>
+            </span>
           </button>
           <button aria-label="Buka menu" id="mobile-menu-btn" onClick={() => setMobileOpen(o => !o)} className="md:hidden p-2 rounded-full hover:bg-surface-subtle transition-colors">
             <span className="material-symbols-outlined text-on-surface-variant">{mobileOpen ? 'close' : 'menu'}</span>
