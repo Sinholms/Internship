@@ -46,6 +46,8 @@ NEXT_PUBLIC_CDN_URL=https://cdn.pekalongankab.go.id
 NEXT_PUBLIC_CDN=https://cdn.pekalongankab.go.id
 STRAPI_BASE_URL=https://cms.dinkominfo.pekalongankab.go.id
 STRAPI_API_KEY=<server-only read-only Strapi token>
+STRAPI_FORM_API_KEY=<optional server-only token for form submissions; falls back to STRAPI_API_KEY>
+STRAPI_PENGADUAN_FORM_ID=<optional Strapi form documentId if the form-submissions collection requires a form relation>
 ```
 
 The CMS requires Bearer authentication. `STRAPI_API_KEY` is server-only and must never be renamed to `NEXT_PUBLIC_STRAPI_API_KEY`. Client UI calls same-origin `/api/*` proxy routes; it does not call Strapi directly.
@@ -61,7 +63,7 @@ The CMS requires Bearer authentication. `STRAPI_API_KEY` is server-only and must
 | `/layanan` | Service cards and related CMS information |
 | `/galeri` | CMS article/image bento gallery |
 | `/unduhan` | Download/information cards and CMS documents |
-| `/kontak` | Contact data and demo complaint form |
+| `/kontak` | Contact data and real complaint form (Zod-validated, submits via `/api/pengaduan` proxy) |
 | `/cms-test` | CMS proxy diagnostics; do not expose publicly in production without protection |
 
 ## Folder Ownership
