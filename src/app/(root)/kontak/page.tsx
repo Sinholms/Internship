@@ -1,3 +1,5 @@
+import BreadcrumbJsonLd from '@/components/BreadcrumbJsonLd';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { BASE_URL_SERVER, getHeadersServer } from '@/lib/api/client.server';
 import KontakFormClient from './KontakFormClient';
@@ -30,6 +32,16 @@ async function fetchContactServer(): Promise<ContactData | null> {
   }
 }
 
+export async function generateMetadata(): Promise<Metadata> {
+  const contact = await fetchContactServer();
+  return {
+    title: `${contact?.title || 'Kontak & Pengaduan'} - Dinkominfo Kabupaten Pekalongan`,
+    description:
+      contact?.description ||
+      'Hubungi Dinas Komunikasi dan Informatika Kabupaten Pekalongan untuk informasi, bantuan layanan, atau pengaduan.',
+  };
+}
+
 export default async function KontakPage() {
   const contact = await fetchContactServer();
 
@@ -39,6 +51,7 @@ export default async function KontakPage() {
 
   return (
     <>
+      <BreadcrumbJsonLd items={[{ name: 'Kontak & Pengaduan', path: '/kontak' }]} />
       <div className="bg-surface-container-low border-b border-border-light">
         <div className="max-w-container-max mx-auto px-4 md:px-margin-desktop py-3 md:py-4">
           <nav className="flex items-center gap-2 text-label-sm font-label-sm text-on-surface-variant">

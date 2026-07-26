@@ -1,3 +1,5 @@
+import BreadcrumbJsonLd from '@/components/BreadcrumbJsonLd';
+import type { Metadata } from 'next';
 import { BASE_URL_SERVER, getHeadersServer } from '@/lib/api/client.server';
 import qs from 'qs';
 import BeritaClient from './BeritaClient';
@@ -33,8 +35,18 @@ async function fetchInitialArticles(searchParams: { page?: string; category?: st
   }
 }
 
+export const metadata: Metadata = {
+  title: 'Berita - Dinkominfo Kabupaten Pekalongan',
+  description: 'Berita dan informasi terbaru dari Dinas Komunikasi dan Informatika Kabupaten Pekalongan.',
+};
+
 export default async function BeritaPage({ searchParams }: { searchParams: Promise<{ page?: string; category?: string; query?: string }> }) {
   const sp = await searchParams;
   const initial = await fetchInitialArticles(sp);
-  return <BeritaClient initialData={initial} />;
+  return (
+    <>
+      <BreadcrumbJsonLd items={[{ name: 'Berita', path: '/berita' }]} />
+      <BeritaClient initialData={initial} />
+    </>
+  );
 }
