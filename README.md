@@ -34,6 +34,7 @@ Focused tests:
 npm run test:article-html
 npm run test:article-pdf
 npm run test:reserved-cms-routes
+npm run test:public-cms-proxy-query
 npm run lint
 ```
 
@@ -68,9 +69,11 @@ The CMS requires Bearer authentication. `STRAPI_API_KEY` is server-only and must
 ```text
 src/app/(root)/       Current route UI and page composition.
 src/components/       Current redesign components.
-src/app/api/          Server-side CMS proxy adapters.
-src/lib/actions/      CMS query and transformation logic.
-src/lib/api/          Public helper and server-only CMS client.
+src/app/api/          Server-side CMS proxy adapters (endpoint allowlists, pagination caps).
+src/lib/actions/      CMS query and transformation logic (server-only internal adapters).
+src/lib/api/          Public helper, server-only CMS client, and proxy query allowlists.
+src/lib/articleIdentifier.ts
+                      Canonical slug/documentId detector shared by server and client.
 src/types/            Public portal CMS types.
 src/lib/sanitizeArticleHtml.ts
                       Sanitization boundary for CMS HTML.
@@ -95,11 +98,14 @@ The reference project supplies CMS/data patterns, not replacement visual compone
 
 ## Current Limitations
 
-Review findings remain open until verified and fixed:
+Verified and closed on 2026-07-23 (see `.omo/docs/CURRENT_STATUS.md` for evidence):
 
-- Berita category UI currently shows only a subset of CMS categories and must use display name/slug separately.
-- Forbidden `as any` casts remain in several TSX files.
-- CMS proxy query parameters need endpoint-specific allowlists and pagination caps.
-- CMS test must not reveal token fragments or token length and should be protected outside development.
-- Gallery/profile record-count behavior needs confirmation against the intended UI contract.
-- Build, network, and visual claims require fresh executable evidence.
+- Berita category filtering uses CMS slug and shows all categories.
+- Forbidden `as any` casts removed from source.
+- CMS proxy routes use endpoint-specific allowlists and pagination caps.
+- `/cms-test` shows only a configured boolean and is development-only.
+- Gallery/profile record-count behavior confirmed against the intended UI contract.
+
+Still open:
+
+- Browser/responsive/dark-mode visual verification requires a live browser session; not yet executed.

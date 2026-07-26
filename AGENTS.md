@@ -23,6 +23,7 @@ npm run lint
 npm run test:article-html
 npm run test:article-pdf
 npm run test:reserved-cms-routes
+npm run test:public-cms-proxy-query
 ```
 
 ## Environment Contract
@@ -44,7 +45,11 @@ STRAPI_API_KEY=<server-only read-only Strapi token>
 ```text
 src/app/(root)/*       Current UI routes and page composition.
 src/components/*       Current UI components; do not replace with reference UI.
-src/lib/actions/*      CMS query/transformation logic.
+src/lib/actions/*      CMS query/transformation logic (internal server-only adapters).
+src/lib/api/publicCmsProxyQuery.ts
+                       Per-endpoint query allowlists, pagination caps, fixed populate.
+src/lib/articleIdentifier.ts
+                       Canonical slug/documentId detector, shared by server and client.
 src/lib/api/client.server.ts
                        Server-only CMS origin and Bearer header.
 src/app/api/*           Same-origin read-only CMS proxy routes.
@@ -75,18 +80,14 @@ Client components fetch `/api/*` only. They must not import `client.server.ts`, 
 
 Track these in `.omo/docs/CURRENT_STATUS.md` and `.omo/docs/UI_LOGIC_POSITION_MAPPING.md`:
 
-- Berita category UI currently caps visible categories at six and must use category slugs for filtering.
-- Several `as any` casts remain and violate type-safety rules.
-- Public CMS proxies forward too many caller-controlled query parameters; add endpoint allowlists and pagination caps.
-- `/cms-test` must not expose token fragments/length and should be development/admin protected.
-- Confirm gallery display count and profile document count against the intended UI contract.
-- Decide whether public-facing action modules remain supported or become server-only/internal adapters.
-- Runtime/build/network/visual verification must be recorded with actual command/browser evidence.
+Only remaining open item; everything else in this section was verified and closed on 2026-07-23 (see `.omo/docs/CURRENT_STATUS.md`):
+
+- Browser/responsive/dark-mode visual verification still requires a live browser session; source and network evidence alone do not satisfy this.
 
 ## Verification Before Completion
 
 - Run `npm run build` and `npm run lint`.
-- Run all three focused test scripts.
+- Run all four focused test scripts.
 - Check every changed TS/TSX file with diagnostics.
 - Smoke-test `/`, `/berita`, one article slug, `/profil`, `/layanan`, `/galeri`, `/unduhan`, `/kontak`, and `/cms-test`.
 - Verify client network requests use same-origin `/api/*` and client bundles contain no token.
