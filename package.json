@@ -15,7 +15,8 @@
   },
   "dependencies": {
     "dompurify": "^3.4.12",
-    "qs": "^6.15.3"
+    "qs": "^6.15.3",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/container-queries": "^0.1.1",

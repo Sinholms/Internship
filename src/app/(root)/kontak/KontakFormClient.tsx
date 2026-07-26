@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { validatePengaduan, type PengaduanFieldErrors } from '@/lib/pengaduanSchema';
 
 interface ContactData {
   title?: string;
@@ -13,19 +14,51 @@ interface Props {
   initialContact?: ContactData | null;
 }
 
+type SubmitStatus =
+  | { state: 'idle' }
+  | { state: 'submitting' }
+  | { state: 'success' }
+  | { state: 'error'; message: string };
+
 export default function KontakFormClient({ initialContact }: Props) {
   const [form, setForm] = useState({ nama: '', email: '', subjek: '', kategori: 'layanan', pesan: '' });
+  const [fieldErrors, setFieldErrors] = useState<PengaduanFieldErrors>({});
+  const [status, setStatus] = useState<SubmitStatus>({ state: 'idle' });
 
   const contact = initialContact;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    setFieldErrors(prev => (prev[e.target.name as keyof PengaduanFieldErrors] ? { ...prev, [e.target.name]: undefined } : prev));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Pengaduan berhasil dikirim (demo)!\n\nCatatan: Integrasi form submission CMS bisa via /api/form-submissions atau /api/mails dengan FORM_API_KEY jika tersedia.');
-    setForm({ nama: '', email: '', subjek: '', kategori: 'layanan', pesan: '' });
+    const validated = validatePengaduan(form);
+    if (!validated.ok) {
+      setFieldErrors(validated.fieldErrors);
+      setStatus({ state: 'error', message: 'Periksa kembali isian formulir Anda.' });
+      return;
+    }
+    setFieldErrors({});
+    setStatus({ state: 'submitting' });
+    try {
+      const res = await fetch('/api/pengaduan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(validated.data),
+      });
+      const json: { error?: string; fieldErrors?: PengaduanFieldErrors } = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (json.fieldErrors) setFieldErrors(json.fieldErrors);
+        setStatus({ state: 'error', message: json.error || 'Pengaduan gagal dikirim. Silakan coba lagi.' });
+        return;
+      }
+      setStatus({ state: 'success' });
+      setForm({ nama: '', email: '', subjek: '', kategori: 'layanan', pesan: '' });
+    } catch {
+      setStatus({ state: 'error', message: 'Pengaduan gagal dikirim. Periksa koneksi Anda dan coba lagi.' });
+    }
   };
 
   return (
@@ -84,14 +117,17 @@ export default function KontakFormClient({ initialContact }: Props) {
           <div>
             <label htmlFor="nama" className="block text-label-md font-label-md font-bold text-primary mb-2">Nama Lengkap</label>
             <input id="nama" name="nama" value={form.nama} onChange={handleChange} type="text" required className="w-full px-4 py-3 rounded-lg border border-border-light bg-surface-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" placeholder="Masukkan nama Anda"/>
+            {fieldErrors.nama && <p role="alert" className="text-label-sm font-label-sm text-red-600 mt-1">{fieldErrors.nama}</p>}
           </div>
           <div>
             <label htmlFor="email" className="block text-label-md font-label-md font-bold text-primary mb-2">Email</label>
             <input id="email" name="email" value={form.email} onChange={handleChange} type="email" required className="w-full px-4 py-3 rounded-lg border border-border-light bg-surface-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" placeholder="nama@email.com"/>
+            {fieldErrors.email && <p role="alert" className="text-label-sm font-label-sm text-red-600 mt-1">{fieldErrors.email}</p>}
           </div>
           <div>
             <label htmlFor="subjek" className="block text-label-md font-label-md font-bold text-primary mb-2">Subjek</label>
             <input id="subjek" name="subjek" value={form.subjek} onChange={handleChange} type="text" required className="w-full px-4 py-3 rounded-lg border border-border-light bg-surface-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" placeholder="Judul pengaduan"/>
+            {fieldErrors.subjek && <p role="alert" className="text-label-sm font-label-sm text-red-600 mt-1">{fieldErrors.subjek}</p>}
           </div>
           <div>
             <label htmlFor="kategori" className="block text-label-md font-label-md font-bold text-primary mb-2">Kategori</label>
@@ -101,14 +137,26 @@ export default function KontakFormClient({ initialContact }: Props) {
               <option value="informasi">Informasi</option>
               <option value="lainnya">Lainnya</option>
             </select>
+            {fieldErrors.kategori && <p role="alert" className="text-label-sm font-label-sm text-red-600 mt-1">{fieldErrors.kategori}</p>}
           </div>
           <div>
             <label htmlFor="pesan" className="block text-label-md font-label-md font-bold text-primary mb-2">Pesan</label>
             <textarea id="pesan" name="pesan" value={form.pesan} onChange={handleChange} rows={5} required className="w-full px-4 py-3 rounded-lg border border-border-light bg-surface-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all resize-none" placeholder="Tuliskan pengaduan atau pertanyaan Anda..."></textarea>
+            {fieldErrors.pesan && <p role="alert" className="text-label-sm font-label-sm text-red-600 mt-1">{fieldErrors.pesan}</p>}
           </div>
-          <button type="submit" className="bg-primary text-on-primary px-8 py-3.5 rounded-lg font-label-md text-label-md font-bold hover:opacity-90 transition-opacity flex items-center gap-2">
+          {status.state === 'success' && (
+            <p role="status" className="text-body-md font-body-md text-primary bg-primary-fixed rounded-lg px-4 py-3">
+              Pengaduan berhasil dikirim. Terima kasih, kami akan menindaklanjuti pesan Anda.
+            </p>
+          )}
+          {status.state === 'error' && (
+            <p role="alert" className="text-body-md font-body-md text-red-600 bg-red-50 rounded-lg px-4 py-3">
+              {status.message}
+            </p>
+          )}
+          <button type="submit" disabled={status.state === 'submitting'} className="bg-primary text-on-primary px-8 py-3.5 rounded-lg font-label-md text-label-md font-bold hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
             <span className="material-symbols-outlined text-[20px]">send</span>
-            Kirim Pengaduan
+            {status.state === 'submitting' ? 'Mengirim...' : 'Kirim Pengaduan'}
           </button>
         </form>
       </div>
