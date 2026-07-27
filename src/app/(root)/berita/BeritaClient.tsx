@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, useRef, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getStrapiImageUrl } from '@/lib/getStrapiImageUrl';
@@ -28,6 +28,8 @@ export default function BeritaClient({ initialData }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<CategoryCMS[]>([]);
   const [searchInput, setSearchInput] = useState(query || '');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Fetch categories via proxy (no token)
   useEffect(() => {
@@ -87,6 +89,23 @@ export default function BeritaClient({ initialData }: Props) {
     return () => { cancelled = true; };
   }, [query, activeSlug, pageParam]);
 
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setDropdownOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
   const filterCategories = [{ name: 'Semua', slug: '' }, ...(categories?.map(c => ({ name: c.name, slug: c.slug })) || [])];
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
@@ -135,33 +154,82 @@ export default function BeritaClient({ initialData }: Props) {
             <h2 className="font-headline-lg text-headline-lg text-primary">Berita Terkini</h2>
             <p className="text-body-md font-body-md text-on-surface-variant mt-2">Pilih kategori untuk menemukan informasi yang Anda butuhkan. {total ? `(${total} artikel)` : ''} {error ? '(Error)' : ''}</p>
           </div>
-          <div className="flex flex-col items-stretch md:items-end gap-3">
-            <form onSubmit={handleSearch} className="flex gap-2" role="search">
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            <form onSubmit={handleSearch} className="flex gap-2 flex-1 md:flex-none" role="search">
               <label htmlFor="berita-search" className="sr-only">Cari berita</label>
-              <input
-                id="berita-search"
-                type="search"
-                value={searchInput}
-                onChange={event => setSearchInput(event.target.value)}
-                placeholder="Cari berita..."
-                className="w-full md:w-64 px-4 py-2 rounded-lg border border-border-light bg-surface-white text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              <button type="submit" className="px-4 py-2 rounded-lg bg-primary text-on-primary text-label-md font-label-md hover:bg-primary-container focus:outline-none focus:ring-2 focus:ring-primary transition-colors">Cari</button>
+              <div className="relative w-full md:w-56">
+                <input
+                  id="berita-search"
+                  type="search"
+                  value={searchInput}
+                  onChange={event => setSearchInput(event.target.value)}
+                  placeholder="Cari berita..."
+                  className="w-full pl-9 pr-4 py-2 rounded-xl border border-border-light bg-surface-white text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-body-md"
+                />
+                <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg pointer-events-none" aria-hidden="true">search</span>
+              </div>
+              <button type="submit" suppressHydrationWarning className="px-4 py-2 rounded-xl bg-primary text-on-primary text-label-md font-label-md hover:bg-primary-container focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium shadow-sm hover:shadow">Cari</button>
             </form>
-            <div className="flex flex-wrap gap-2" aria-label="Filter kategori berita">
-              {filterCategories.map((cat) => (
-                <button
-                  key={cat.slug || 'semua'}
-                  onClick={() => handleCategory(cat.slug)}
-                  className={activeSlug === cat.slug
-                    ? "px-4 py-2 rounded-full bg-primary text-on-primary text-label-md font-label-md"
-                    : "px-4 py-2 rounded-full bg-surface-white border border-border-light text-on-surface-variant text-label-md font-label-md hover:border-primary hover:text-primary transition-colors"}
-                  type="button"
-                  aria-pressed={activeSlug === cat.slug}
+
+            <div ref={dropdownRef} className="relative shrink-0" aria-label="Filter kategori berita">
+              <button
+                onClick={() => setDropdownOpen(prev => !prev)}
+                type="button"
+                aria-haspopup="listbox"
+                aria-expanded={dropdownOpen}
+                suppressHydrationWarning
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-label-md font-label-md transition-all duration-200 bg-surface-white text-on-surface hover:border-primary hover:text-primary shadow-sm hover:shadow outline-none focus:ring-2 focus:ring-primary/20 ${
+                  dropdownOpen ? 'border-primary ring-2 ring-primary/20 text-primary' : 'border-border-light'
+                }`}
+              >
+                <span className="material-symbols-outlined text-lg text-primary shrink-0" aria-hidden="true">filter_alt</span>
+                <span className="max-w-[130px] sm:max-w-[170px] truncate font-medium">
+                  {filterCategories.find(c => c.slug === activeSlug)?.name || 'Semua'}
+                </span>
+                <span className={`material-symbols-outlined text-lg text-on-surface-variant transition-transform duration-200 shrink-0 ${dropdownOpen ? 'rotate-180 text-primary' : ''}`} aria-hidden="true">
+                  expand_more
+                </span>
+              </button>
+
+              {dropdownOpen && (
+                <div
+                  role="listbox"
+                  aria-label="Daftar kategori"
+                  className="absolute right-0 top-full mt-2 z-50 w-72 p-1.5 bg-surface-white dark:bg-[#1e2023] border border-border-light rounded-2xl shadow-xl backdrop-blur-lg animate-in fade-in-0 zoom-in-95 duration-150"
                 >
-                  {cat.name}
-                </button>
-              ))}
+                  <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-on-surface-variant/70 border-b border-border-light/60 mb-1 flex items-center justify-between">
+                    <span>Kategori Berita</span>
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-primary-fixed text-primary">
+                      {filterCategories.length}
+                    </span>
+                  </div>
+
+                  <div className="custom-scrollbar max-h-64 overflow-y-auto space-y-0.5 pr-0.5">
+                    {filterCategories.map((cat) => {
+                      const isSelected = activeSlug === cat.slug;
+                      return (
+                        <button
+                          key={cat.slug || 'semua'}
+                          onClick={() => { handleCategory(cat.slug); setDropdownOpen(false); }}
+                          type="button"
+                          role="option"
+                          aria-selected={isSelected}
+                          className={`w-full text-left px-3 py-2 rounded-xl text-label-md transition-all flex items-center justify-between gap-3 ${
+                            isSelected
+                              ? 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary font-semibold'
+                              : 'text-on-surface hover:bg-surface-container-low hover:text-primary'
+                          }`}
+                        >
+                          <span className="truncate" title={cat.name}>{cat.name}</span>
+                          {isSelected && (
+                            <span className="material-symbols-outlined text-base text-primary shrink-0" aria-hidden="true">check</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -11,6 +11,6 @@ export default function ProfileArticleContent({ content }: { content: string }) 
   }, [content]);
 
   return (
-    <div className="prose max-w-none text-body-md font-body-md text-on-surface-variant prose-headings:text-primary prose-p:text-on-surface-variant prose-a:text-primary prose-img:rounded-xl prose-img:w-full prose-headings:font-headline-lg prose-headings:text-headline-lg leading-relaxed space-y-4" dangerouslySetInnerHTML={{ __html: safeHtml }} />
+    <div className="article-body max-w-none" dangerouslySetInnerHTML={{ __html: safeHtml }} />
   );
 }

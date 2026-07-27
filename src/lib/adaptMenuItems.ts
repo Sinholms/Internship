@@ -1,15 +1,29 @@
+export interface HeaderSubItem {
+  readonly label: string;
+  readonly path: string;
+}
+
 export interface HeaderNavItem {
   readonly label: string;
   readonly path: string;
   readonly match: readonly string[];
+  readonly children?: readonly HeaderSubItem[];
 }
 
 export const DEFAULT_HEADER_NAV_ITEMS: readonly HeaderNavItem[] = [
   { label: 'Beranda', path: '/', match: ['/', '/index'] },
-  { label: 'Profil', path: '/profil', match: ['/profil', '/content-page', '/visi-misi', '/struktur-organisasi', '/profil'] },
+  { label: 'Profil', path: '/profil', match: ['/profil', '/content-page', '/visi-misi', '/struktur-organisasi'] },
   { label: 'Berita', path: '/berita', match: ['/berita', '/articles', '/article-detail'] },
   { label: 'Layanan', path: '/layanan', match: ['/layanan'] },
-  { label: 'Galeri', path: '/galeri', match: ['/galeri'] },
+  {
+    label: 'ZI & RB',
+    path: '/berita?category=zona-integritas',
+    match: ['/zona-integritas', '/reformasi-birokrasi', 'category=zona-integritas', 'category=reformasi-birokrasi'],
+    children: [
+      { label: 'Zona Integritas (ZI)', path: '/berita?category=zona-integritas' },
+      { label: 'Reformasi Birokrasi (RB)', path: '/berita?category=reformasi-birokrasi' },
+    ],
+  },
   { label: 'Informasi', path: '/unduhan', match: ['/unduhan', '/informasi'] },
   { label: 'Pengaduan', path: '/kontak', match: ['/kontak', '/pengaduan', '/contact-page'] },
 ] as const;

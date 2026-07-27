@@ -17,7 +17,7 @@ export default function PageContent({ content }: { content: string }) {
 
   return (
     <div
-      className="prose max-w-none text-body-md md:text-body-lg leading-relaxed prose-headings:text-primary prose-p:text-on-surface-variant prose-a:text-primary prose-img:rounded-xl prose-img:w-full prose-headings:font-headline-lg"
+      className="article-body max-w-none"
       dangerouslySetInnerHTML={{ __html: safeHtml }}
     />
   );

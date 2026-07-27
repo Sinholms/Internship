@@ -46,9 +46,6 @@ export default function ProfilPage() {
 
       <section className="bg-primary text-on-primary mt-8">
         <div className="max-w-container-max mx-auto px-4 md:px-margin-desktop py-12 md:py-section-padding">
-          <span className="inline-flex items-center gap-2 bg-secondary-container text-on-secondary-container px-4 py-1.5 rounded-full font-label-md text-label-md">
-            <span className="material-symbols-outlined text-base" aria-hidden="true">account_balance</span> Profil {loading ? '(memuat...)' : `(${sorted.length} dokumen CMS)`}
-          </span>
           <h2 className="max-w-3xl mt-5 font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg leading-tight">Dinas Komunikasi dan Informatika Kabupaten Pekalongan</h2>
           <p className="max-w-2xl mt-4 text-body-md md:text-body-lg font-body-md md:font-body-lg opacity-90">Data profil diambil langsung dari CMS - Visi Misi, Struktur Organisasi, Profil Kantor, Data Pegawai. UI tetap persis.</p>
         </div>

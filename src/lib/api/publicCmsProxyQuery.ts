@@ -56,7 +56,16 @@ export const GLOBAL_POPULATE = {
 } as const;
 export const HOME_PAGE_POPULATE = {
   heroSlider: { populate: '*' },
-  sections: { populate: { blocks: { on: { 'widgets.latest-articles': { populate: '*' } } } } },
+  sections: {
+    populate: {
+      blocks: {
+        on: {
+          'widgets.latest-articles': { populate: '*' },
+          'widgets.services': { populate: { items: { populate: '*' } } },
+        },
+      },
+    },
+  },
   asides: { populate: { item: { on: { 'widgets.latest-articles': { populate: '*' } } } } },
 } as const;
 export const CONTACT_PAGE_POPULATE = {

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import heroFallback from '@/assets/foto-kominfo.png';
 import { getStrapiImageUrl } from '@/lib/getStrapiImageUrl';
 import { formatDateID } from '@/lib/formatDate';
-import { adaptHomePage } from '@/lib/adaptHomePage';
+import { adaptHomePage, type ServiceItemConfig } from '@/lib/adaptHomePage';
 import type { ArticleCMS } from '@/types/cms';
 
 type RecordValue = Readonly<Record<string, unknown>>;
@@ -23,6 +23,7 @@ export default function HomePage() {
   const [cmsHeroSrc, setCmsHeroSrc] = useState<string | null>(null);
   const [latestArticlesLimit, setLatestArticlesLimit] = useState(3);
   const [latestArticlesCategory, setLatestArticlesCategory] = useState<string | null>(null);
+  const [quickServices, setQuickServices] = useState<readonly ServiceItemConfig[]>([]);
   const [homeConfigReady, setHomeConfigReady] = useState(false);
 
   useEffect(() => {
@@ -38,6 +39,7 @@ export default function HomePage() {
         setCmsHeroSrc(config.heroImageUrl);
         setLatestArticlesLimit(config.latestArticlesLimit);
         setLatestArticlesCategory(config.latestArticlesCategory);
+        setQuickServices(config.services);
         setHomeConfigReady(true);
       })
       .catch(error => {
@@ -134,21 +136,30 @@ export default function HomePage() {
   }
 
   const latestIds = new Set(latestNews.map(a => a.documentId));
-  const kabupatenNews = newsPool.filter(a => !latestIds.has(a.documentId)).slice(0, 2);
+  // Prefer items that are not in latestNews, or slice next 3 items
+  const kabupatenNewsPool = newsPool.filter(a => !latestIds.has(a.documentId));
+  const kabupatenNews = (kabupatenNewsPool.length >= 3 ? kabupatenNewsPool : newsPool).slice(0, 3);
 
   const kabupatenItems = kabupatenNews.length > 0
-    ? kabupatenNews.map(a => ({
-        key: a.documentId,
-        date: formatDateID(a.publication_date || a.publishedAt),
-        title: a.title,
-        href: `/berita/${a.slug}`,
-        img: a.featuredImage?.url
-          ? getStrapiImageUrl(a.featuredImage.formats?.small?.url || a.featuredImage.url)
-          : heroSrc,
-      }))
+    ? kabupatenNews.map(a => {
+        const featImg = a.featuredImage;
+        const resolvedImg = featImg?.url
+          ? getStrapiImageUrl(featImg.formats?.small?.url || featImg.url)
+          : `https://picsum.photos/seed/${a.documentId}/400/260`;
+
+        return {
+          key: a.documentId,
+          date: formatDateID(a.publication_date || a.publishedAt),
+          title: a.title,
+          category: a.category?.name || 'Informasi',
+          href: `/berita/${a.slug}`,
+          img: resolvedImg,
+        };
+      })
     : [
-        { key: 'fallback-1', date: '22 Sep 2024', title: 'WaliKabupaten Pekalongan Tinjau Implementasi SPBE di Setiap OPD', href: '/berita', img: heroSrc },
-        { key: 'fallback-2', date: '20 Jun 2023', title: 'Peringatan Hari Jadi Kabupaten Pekalongan ke-117: Sinergi Menuju Era Digital', href: '/berita', img: heroSrc },
+        { key: 'fallback-1', date: '22 Sep 2024', title: 'WaliKabupaten Pekalongan Tinjau Implementasi SPBE di Setiap OPD', category: 'Pemerintahan', href: '/berita', img: 'https://picsum.photos/seed/kab1/400/260' },
+        { key: 'fallback-2', date: '20 Jun 2023', title: 'Peringatan Hari Jadi Kabupaten Pekalongan ke-117: Sinergi Menuju Era Digital', category: 'Kabupaten', href: '/berita', img: 'https://picsum.photos/seed/kab2/400/260' },
+        { key: 'fallback-3', date: '15 Mei 2023', title: 'Workshop Digitalisasi Pelayanan Publik OPD Pekalongan', category: 'Teknologi', href: '/berita', img: 'https://picsum.photos/seed/kab3/400/260' },
       ];
 
   const galleryFallback = [
@@ -193,40 +204,47 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Quick Links / Services - static sesuai design baru, bisa nanti dari CMS services widget */}
+      {/* Quick Links / Services - dynamic via CMS or fallback with exact target links */}
       <section className="relative -mt-10 md:-mt-16 z-10 max-w-container-max mx-auto px-4 md:px-margin-desktop">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-gutter">
-          <Link className="bg-surface-white p-4 md:p-8 rounded-xl shadow-md flex flex-col items-center text-center hover-card group" href="/layanan">
-            <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-primary-fixed mb-3 md:mb-4 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
-              <span className="material-symbols-outlined text-2xl md:text-3xl">book</span>
-            </div>
-            <span className="font-label-sm md:font-label-md text-label-sm md:text-label-md text-primary font-bold">SKM</span>
-            <p className="text-xs md:text-label-sm font-label-sm text-on-surface-variant mt-1">Survey Kepuasan Masyarakat</p>
-          </Link>
+          {quickServices.map((item) => {
+            const isExternal = item.isExternal || item.href.startsWith('http://') || item.href.startsWith('https://');
+            const iconElement = item.iconUrl ? (
+              <img src={item.iconUrl} alt={item.title} className="w-8 h-8 md:w-10 md:h-10 object-contain" />
+            ) : (
+              <span className="material-symbols-outlined text-2xl md:text-3xl">{item.iconName || 'apps'}</span>
+            );
 
-          <Link className="bg-surface-white p-4 md:p-8 rounded-xl shadow-md flex flex-col items-center text-center hover-card group" href="/layanan">
-            <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-primary-fixed mb-3 md:mb-4 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
-              <span className="material-symbols-outlined text-2xl md:text-3xl">work</span>
-            </div>
-            <span className="font-label-sm md:font-label-md text-label-sm md:text-label-md text-primary font-bold">ZI & RB</span>
-            <p className="text-xs md:text-label-sm font-label-sm text-on-surface-variant mt-1">Zona Integritas dan Reformasi Birokrasi</p>
-          </Link>
+            const cardContent = (
+              <>
+                <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-primary-fixed mb-3 md:mb-4 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
+                  {iconElement}
+                </div>
+                <span className="font-label-sm md:font-label-md text-label-sm md:text-label-md text-primary font-bold">{item.title}</span>
+                <p className="text-xs md:text-label-sm font-label-sm text-on-surface-variant mt-1 line-clamp-2">{item.description}</p>
+              </>
+            );
 
-          <Link className="bg-surface-white p-4 md:p-8 rounded-xl shadow-md flex flex-col items-center text-center hover-card group" href="/profil">
-            <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-primary-fixed mb-3 md:mb-4 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
-              <span className="material-symbols-outlined text-2xl md:text-3xl">description</span>
-            </div>
-            <span className="font-label-sm md:font-label-md text-label-sm md:text-label-md text-primary font-bold">Publikasi</span>
-            <p className="text-xs md:text-label-sm font-label-sm text-on-surface-variant mt-1">Informasi Publik</p>
-          </Link>
-
-          <Link className="bg-surface-white p-4 md:p-8 rounded-xl shadow-md flex flex-col items-center text-center hover-card group" href="/unduhan">
-            <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-primary-fixed mb-3 md:mb-4 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
-              <span className="material-symbols-outlined text-2xl md:text-3xl">download</span>
-            </div>
-            <span className="font-label-sm md:font-label-md text-label-sm md:text-label-md text-primary font-bold">Unduhan</span>
-            <p className="text-xs md:text-label-sm font-label-sm text-on-surface-variant mt-1">Regulasi, Dokumen, Materi</p>
-          </Link>
+            return isExternal ? (
+              <a
+                key={item.title}
+                className="bg-surface-white p-4 md:p-8 rounded-xl shadow-md flex flex-col items-center text-center hover-card group"
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {cardContent}
+              </a>
+            ) : (
+              <Link
+                key={item.title}
+                className="bg-surface-white p-4 md:p-8 rounded-xl shadow-md flex flex-col items-center text-center hover-card group"
+                href={item.href}
+              >
+                {cardContent}
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -309,14 +327,27 @@ export default function HomePage() {
                 <Link className="text-label-md font-label-md text-primary" href="/berita">Arsip Kabupaten</Link>
               </div>
 
-              <div className="space-y-4 md:space-y-6">
+              <div className="space-y-4 md:space-y-5">
                 {kabupatenItems.map(item => (
-                  <div key={item.key} className="flex gap-4 md:gap-6 bg-surface-white p-3 md:p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                    <div className="w-24 h-20 md:w-32 md:h-24 rounded-lg bg-cover bg-center shrink-0" style={{ backgroundImage: `url('${item.img}')` }}></div>
-                    <div className="flex flex-col justify-center">
-                      <span className="text-label-sm font-label-sm text-on-surface-variant">{item.date}</span>
-                      <h4 className="font-label-md text-label-md text-primary mt-1 line-clamp-2">{item.title}</h4>
-                      <Link className="text-primary-container font-label-sm text-label-sm mt-2 flex items-center gap-1 hover:underline" href={item.href}>Selengkapnya <span className="material-symbols-outlined text-xs">open_in_new</span></Link>
+                  <div key={item.key} className="flex gap-4 md:gap-5 bg-surface-white p-3.5 md:p-4 rounded-xl border border-border-light shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 group">
+                    <img
+                      src={item.img}
+                      alt={item.title}
+                      className="w-28 h-20 md:w-36 md:h-24 rounded-lg object-cover shrink-0"
+                    />
+                    <div className="flex flex-col justify-center grow min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[11px] font-semibold text-primary bg-primary-fixed px-2 py-0.5 rounded-full">
+                          {item.category}
+                        </span>
+                        <span className="text-label-sm font-label-sm text-on-surface-variant">{item.date}</span>
+                      </div>
+                      <h4 className="font-label-md text-label-md text-primary group-hover:text-primary-container font-semibold line-clamp-2 transition-colors">
+                        {item.title}
+                      </h4>
+                      <Link className="text-primary font-label-sm text-label-sm font-bold mt-2 flex items-center gap-1 hover:underline" href={item.href}>
+                        Selengkapnya <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                      </Link>
                     </div>
                   </div>
                 ))}

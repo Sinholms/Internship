@@ -136,8 +136,8 @@ export default function ArticleDetailClient() {
 
         <img alt={article.featuredImage?.alternativeText || article.title} className="w-full h-64 md:h-96 object-cover rounded-xl mb-8 md:mb-10" width="896" height="384" src={imageUrl} loading="lazy" />
 
-        <div className="space-y-6 text-body-md md:text-body-lg font-body-md md:font-body-lg leading-relaxed text-on-surface-variant">
-          <div className="prose max-w-none text-body-md md:text-body-lg leading-relaxed prose-headings:text-primary prose-p:text-on-surface-variant prose-a:text-primary prose-img:rounded-xl prose-img:w-full prose-headings:font-headline-lg" dangerouslySetInnerHTML={{ __html: content }} />
+        <div className="article-body max-w-none">
+          <div dangerouslySetInnerHTML={{ __html: content }} />
         </div>
 
         {articlePdf && (

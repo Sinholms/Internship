@@ -1,13 +1,54 @@
 import { getStrapiImageUrl } from '@/lib/getStrapiImageUrl';
 
+export interface ServiceItemConfig {
+  readonly title: string;
+  readonly description: string;
+  readonly href: string;
+  readonly iconUrl?: string | null;
+  readonly iconName?: string;
+  readonly isExternal?: boolean;
+}
+
 export interface HomePageConfig {
   readonly heroImageUrl: string | null;
   readonly latestArticlesLimit: number;
   readonly latestArticlesCategory: string | null;
+  readonly services: readonly ServiceItemConfig[];
 }
 
 const DEFAULT_LATEST_ARTICLES_LIMIT = 3;
 const MAX_LATEST_ARTICLES_LIMIT = 3;
+
+const DEFAULT_SERVICES: readonly ServiceItemConfig[] = [
+  {
+    title: 'SKM',
+    description: 'Survei Kepuasan Masyarakat',
+    href: 'https://skm.pekalongankab.go.id',
+    iconName: 'book',
+    isExternal: true,
+  },
+  {
+    title: 'Galeri',
+    description: 'Dokumentasi Kegiatan',
+    href: '/galeri',
+    iconName: 'photo_library',
+    isExternal: false,
+  },
+  {
+    title: 'Publikasi',
+    description: 'Informasi Publik',
+    href: '/profil',
+    iconName: 'description',
+    isExternal: false,
+  },
+  {
+    title: 'Unduhan',
+    description: 'Regulasi, Dokumen, Materi',
+    href: '/unduhan',
+    iconName: 'download',
+    isExternal: false,
+  },
+];
 
 type RecordValue = Readonly<Record<string, unknown>>;
 
@@ -54,6 +95,40 @@ function readLatestArticlesBlock(sections: unknown): RecordValue | null {
   return null;
 }
 
+function readServicesBlock(sections: unknown): ServiceItemConfig[] {
+  if (!Array.isArray(sections)) return [];
+
+  for (const section of sections) {
+    if (!isRecord(section) || !Array.isArray(section.blocks)) continue;
+    for (const block of section.blocks) {
+      if (isRecord(block) && block.__component === 'widgets.services' && Array.isArray(block.items)) {
+        const result: ServiceItemConfig[] = [];
+        for (const item of block.items) {
+          if (!isRecord(item)) continue;
+          const title = readString(item.title);
+          if (!title) continue;
+          const description = readString(item.description) || '';
+          const rawLink = readString(item.ctaLink) || readString(item.link) || readString(item.url) || '/layanan';
+          const isExternal = rawLink.startsWith('http://') || rawLink.startsWith('https://');
+          const iconObj = isRecord(item.icon) ? item.icon : null;
+          const iconUrl = iconObj ? readString(iconObj.url) : null;
+
+          result.push({
+            title,
+            description,
+            href: rawLink,
+            iconUrl: iconUrl ? getStrapiImageUrl(iconUrl) : null,
+            isExternal,
+          });
+        }
+        if (result.length > 0) return result;
+      }
+    }
+  }
+
+  return [];
+}
+
 function readLimit(value: unknown): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) return DEFAULT_LATEST_ARTICLES_LIMIT;
   return Math.min(MAX_LATEST_ARTICLES_LIMIT, Math.max(1, Math.floor(value)));
@@ -67,10 +142,12 @@ function readCategory(block: RecordValue): string | null {
 export function adaptHomePage(payload: unknown): HomePageConfig {
   const data = isRecord(payload) && isRecord(payload.data) ? payload.data : null;
   const block = data ? readLatestArticlesBlock(data.sections) : null;
+  const cmsServices = data ? readServicesBlock(data.sections) : [];
 
   return {
     heroImageUrl: data ? readHeroImageUrl(data.heroSlider) : null,
     latestArticlesLimit: block ? readLimit(block.limit) : DEFAULT_LATEST_ARTICLES_LIMIT,
     latestArticlesCategory: block ? readCategory(block) : null,
+    services: cmsServices.length > 0 ? cmsServices : DEFAULT_SERVICES,
   };
 }

@@ -77,6 +77,41 @@ export default function Header() {
         <nav className="hidden md:flex items-center gap-6 lg:gap-8" aria-label="Navigasi utama">
           {navItems.map(item => {
             const active = isActive(pathname, item.match);
+            if (item.children && item.children.length > 0) {
+              return (
+                <div key={item.path} className="relative group py-2">
+                  <button
+                    type="button"
+                    suppressHydrationWarning
+                    className={`nav-link font-label-md text-label-md transition-colors duration-200 flex items-center gap-1 cursor-pointer ${
+                      active ? ACTIVE_DESKTOP : INACTIVE_DESKTOP
+                    }`}
+                  >
+                    {item.label}
+                    <span className="material-symbols-outlined text-sm transition-transform duration-200 group-hover:rotate-180">
+                      expand_more
+                    </span>
+                  </button>
+                  <div className="absolute left-0 top-full hidden group-hover:block pt-1.5 z-50 animate-in fade-in-0 zoom-in-95 duration-150">
+                    <div className="w-64 bg-surface-white dark:bg-[#1e2023] border border-border-light rounded-2xl shadow-xl p-2 backdrop-blur-lg">
+                      {item.children.map(sub => (
+                        <Link
+                          key={sub.path}
+                          href={sub.path}
+                          className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-label-md font-label-md text-on-surface hover:bg-surface-container-low hover:text-primary dark:hover:text-primary transition-all group/sub"
+                        >
+                          <span>{sub.label}</span>
+                          <span className="material-symbols-outlined text-sm opacity-0 group-hover/sub:opacity-100 transition-opacity">
+                            chevron_right
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <Link
                 key={item.path}
@@ -90,7 +125,7 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-2 md:gap-4">
-          <button aria-label="Cari" className="p-2 rounded-full hover:bg-surface-subtle transition-colors">
+          <button aria-label="Cari" suppressHydrationWarning className="p-2 rounded-full hover:bg-surface-subtle transition-colors">
             <span className="material-symbols-outlined text-on-surface-variant">search</span>
           </button>
           <button
@@ -99,6 +134,7 @@ export default function Header() {
             aria-checked={theme === 'dark'}
             id="theme-toggle"
             onClick={toggleTheme}
+            suppressHydrationWarning
             className="p-2 rounded-full hover:bg-surface-subtle transition-colors"
           >
             <span
@@ -113,7 +149,7 @@ export default function Header() {
               </span>
             </span>
           </button>
-          <button aria-label="Buka menu" id="mobile-menu-btn" onClick={() => setMobileOpen(o => !o)} className="md:hidden p-2 rounded-full hover:bg-surface-subtle transition-colors">
+          <button aria-label="Buka menu" id="mobile-menu-btn" onClick={() => setMobileOpen(o => !o)} suppressHydrationWarning className="md:hidden p-2 rounded-full hover:bg-surface-subtle transition-colors">
             <span className="material-symbols-outlined text-on-surface-variant">{mobileOpen ? 'close' : 'menu'}</span>
           </button>
         </div>
@@ -123,6 +159,28 @@ export default function Header() {
         <div className="px-4 py-4 space-y-1">
           {navItems.map(item => {
             const active = isActive(pathname, item.match);
+            if (item.children && item.children.length > 0) {
+              return (
+                <div key={item.path} className="space-y-1 py-1">
+                  <div className="px-4 py-2 font-label-md text-label-md font-bold text-primary dark:text-primary-fixed flex items-center gap-1">
+                    <span>{item.label}</span>
+                    <span className="material-symbols-outlined text-sm">expand_more</span>
+                  </div>
+                  <div className="pl-4 space-y-1 border-l-2 border-primary/20 ml-4">
+                    {item.children.map(sub => (
+                      <Link
+                        key={sub.path}
+                        href={sub.path}
+                        className="nav-mobile-link block px-4 py-2.5 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-subtle"
+                      >
+                        {sub.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <Link
                 key={item.path}
