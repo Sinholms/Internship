@@ -47,7 +47,7 @@ export default function ProfilPage() {
       <section className="bg-primary text-on-primary mt-8">
         <div className="max-w-container-max mx-auto px-4 md:px-margin-desktop py-12 md:py-section-padding">
           <h2 className="max-w-3xl mt-5 font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg leading-tight">Dinas Komunikasi dan Informatika Kabupaten Pekalongan</h2>
-          <p className="max-w-2xl mt-4 text-body-md md:text-body-lg font-body-md md:font-body-lg opacity-90">Data profil diambil langsung dari CMS - Visi Misi, Struktur Organisasi, Profil Kantor, Data Pegawai. UI tetap persis.</p>
+          <p className="max-w-2xl mt-4 text-body-md md:text-body-lg font-body-md md:font-body-lg opacity-90">Data profil Dinkominfo - Visi Misi, Struktur Organisasi, Profil Kantor, Data Pegawai.</p>
         </div>
       </section>
 
@@ -73,10 +73,6 @@ export default function ProfilPage() {
                   </ol>
                 )}
               </nav>
-              <div className="border-l-4 border-secondary-container bg-primary-fixed p-5 rounded-r-xl">
-                <h2 className="text-label-md font-label-md text-primary">Sumber Data</h2>
-                <p className="mt-2 text-label-sm font-label-sm text-on-surface-variant">Data profil diambil dari CMS kategori profil - {sorted.length} dokumen. Klik untuk lihat detail.</p>
-              </div>
             </div>
           </aside>
 
@@ -106,10 +102,8 @@ export default function ProfilPage() {
 
               return (
                 <section key={article.documentId} id={article.slug} className="scroll-mt-28 border-b border-border-light pb-12 md:pb-16 last:border-0">
-                  <p className="text-label-md font-label-md text-primary uppercase">PROFIL CMS • {article.category?.name || 'Profil'} • {article.views || 0} views</p>
                   <h2 className="mt-2 text-headline-lg font-headline-lg text-primary">{article.title}</h2>
                   <div className="mt-2 flex items-center gap-2 text-label-sm text-on-surface-variant">
-                    <span>Slug: {article.slug}</span>
                     <span>•</span>
                     <span>{article.publishedAt ? new Date(article.publishedAt).toLocaleDateString('id-ID') : ''}</span>
                   </div>
