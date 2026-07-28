@@ -41,10 +41,10 @@ npm run lint
 ## Environment
 
 ```text
-NEXT_PUBLIC_STRAPI_BASE_URL=https://cms.dinkominfo.pekalongankab.go.id
-NEXT_PUBLIC_CDN_URL=https://cdn.pekalongankab.go.id
-NEXT_PUBLIC_CDN=https://cdn.pekalongankab.go.id
-STRAPI_BASE_URL=https://cms.dinkominfo.pekalongankab.go.id
+NEXT_PUBLIC_STRAPI_BASE_URL=
+NEXT_PUBLIC_CDN_URL=
+NEXT_PUBLIC_CDN=
+STRAPI_BASE_URL=
 STRAPI_API_KEY=<server-only read-only Strapi token>
 STRAPI_FORM_API_KEY=<optional server-only token for form submissions; falls back to STRAPI_API_KEY>
 STRAPI_PENGADUAN_FORM_ID=<optional Strapi form documentId if the form-submissions collection requires a form relation>
