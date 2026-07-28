@@ -20,7 +20,6 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const heroSrc = typeof heroFallback === 'string' ? heroFallback : heroFallback.src;
-  const [cmsHeroSrc, setCmsHeroSrc] = useState<string | null>(null);
   const [latestArticlesLimit, setLatestArticlesLimit] = useState(3);
   const [latestArticlesCategory, setLatestArticlesCategory] = useState<string | null>(null);
   const [quickServices, setQuickServices] = useState<readonly ServiceItemConfig[]>([]);
@@ -36,7 +35,6 @@ export default function HomePage() {
       })
       .then(payload => {
         const config = adaptHomePage(payload);
-        setCmsHeroSrc(config.heroImageUrl);
         setLatestArticlesLimit(config.latestArticlesLimit);
         setLatestArticlesCategory(config.latestArticlesCategory);
         setQuickServices(config.services);
@@ -180,9 +178,9 @@ export default function HomePage() {
 
   return (
     <>
-      {/* Hero Section Slider */}
+      {/* Hero Section */}
       <section className="relative h-[500px] md:h-[600px] overflow-hidden">
-        <div className="absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000" style={{ backgroundImage: `url(${cmsHeroSrc || heroSrc})` }}>
+        <div className="absolute inset-0 w-full h-full bg-cover bg-center" style={{ backgroundImage: `url(${heroSrc})` }}>
           <div className="absolute inset-0 hero-gradient"></div>
         </div>
 
@@ -195,12 +193,6 @@ export default function HomePage() {
               <Link href="/profil" className="bg-white/10 backdrop-blur-md border border-white/30 px-5 md:px-8 py-3 md:py-3.5 rounded-lg font-label-md text-label-md hover:bg-white/20 transition-all">Tentang Kami</Link>
             </div>
           </div>
-        </div>
-
-        <div className="absolute bottom-6 md:bottom-8 right-4 md:right-margin-desktop flex gap-2">
-          <button aria-label="Slide pertama" className="w-8 md:w-12 h-1.5 bg-secondary-container rounded-full"></button>
-          <button aria-label="Slide kedua" className="w-8 md:w-12 h-1.5 bg-white/30 rounded-full"></button>
-          <button aria-label="Slide ketiga" className="w-8 md:w-12 h-1.5 bg-white/30 rounded-full"></button>
         </div>
       </section>
 
